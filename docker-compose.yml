@@ -1,8 +1,15 @@
-# Uso local (`docker compose up --build`) e no servidor (ver
-# docs/07-infraestrutura-deploy.md). Em produção, o nginx do host faz proxy
-# para 127.0.0.1:3002 — só loopback, a porta não fica exposta na internet.
+# Uso local (`docker compose up --build`, builda a partir do Dockerfile) e no
+# servidor (`docker compose pull && docker compose up -d` — NUNCA --build; a
+# imagem é buildada pelo GitHub Actions, ver .github/workflows/build-and-push.yml).
+# A instância EC2 é pequena e compartilhada com outros projetos — um build
+# local (`npm ci` + `next build`) já derrubou a máquina inteira uma vez (ver
+# docs/07-infraestrutura-deploy.md).
+#
+# Em produção, o nginx do host faz proxy para 127.0.0.1:3002 — só loopback,
+# a porta não fica exposta na internet.
 services:
   app:
+    image: ghcr.io/vinnisntos/app-vinnicius:latest
     build:
       context: .
       dockerfile: Dockerfile
