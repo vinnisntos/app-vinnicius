@@ -1,7 +1,11 @@
 # ADR-0001: Escolha de stack
 
 ## Status
-Aceito — 2026-09-07
+Aceito — 2026-09-07. Parcialmente superseded por
+[ADR-0004](0004-nginx-compartilhado-em-vez-de-caddy.md): a camada de proxy/TLS
+citada abaixo (Caddy) não se aplica mais — a EC2 real já usa nginx
+compartilhado com outros projetos. O restante desta decisão (Next.js,
+Supabase, Drizzle) permanece válido.
 
 ## Contexto
 Requisito explícito: Postgres via Supabase é obrigatório. Infraestrutura é AWS

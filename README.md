@@ -37,7 +37,7 @@ Leia nesta ordem:
 ## Stack (resumo)
 
 Next.js 15 (App Router/TS) · Supabase (Postgres + Auth + RLS) · Drizzle ORM ·
-Tailwind CSS v4 + shadcn/ui · Docker + Caddy em AWS EC2.
+Tailwind CSS v4 + shadcn/ui · Docker atrás do nginx compartilhado em AWS EC2.
 
 Justificativa completa em [`docs/adr/0001-escolha-de-stack.md`](docs/adr/0001-escolha-de-stack.md).
 

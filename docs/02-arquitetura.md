@@ -10,7 +10,7 @@
 | ORM / migrations | **Drizzle ORM** + `drizzle-kit` | Queries tipadas ponta a ponta, migrations versionadas como SQL, sem magia de ORM pesado. |
 | Validação | **Zod** | Única fonte de verdade de schema em cada boundary (formulário → server action → banco). |
 | UI | **Tailwind CSS v4 + shadcn/ui (Radix)** | Acessível por padrão (Radix), tokens de design fáceis de portar do site atual. Ver [`05-design-system.md`](05-design-system.md). |
-| Infra | **Docker + Caddy** em **AWS EC2** | Caddy resolve TLS automático (Let's Encrypt) para `agenda.vinnisantos.com.br` sem config manual de certificado. |
+| Infra | **Docker** atrás do **nginx** já existente em **AWS EC2** (instância compartilhada) | Ver [ADR-0004](adr/0004-nginx-compartilhado-em-vez-de-caddy.md) — nginx + Certbot já são a convenção da instância, não Caddy dedicado. |
 | CI | **GitHub Actions** | Lint + typecheck + testes + build de imagem em cada PR. |
 
 Stack **não** usada, e por quê: sem backend C#/.NET separado (documentado no
@@ -27,8 +27,8 @@ flowchart TB
         UI["Next.js App Router\nReact Server + Client Components"]
     end
 
-    subgraph EC2["AWS EC2 — instância única"]
-        Caddy["Caddy\n(reverse proxy + TLS automático)"]
+    subgraph EC2["AWS EC2 — instância compartilhada com outros projetos"]
+        Nginx["nginx (já existente)\nTLS via Certbot"]
         App["Container Next.js\n(server actions = camada de API)"]
     end
 
@@ -37,7 +37,7 @@ flowchart TB
         DB[("Postgres\ncom RLS por user_id")]
     end
 
-    UI -->|HTTPS| Caddy --> App
+    UI -->|HTTPS| Nginx --> App
     App -->|"service-role key\n(server-only)"| DB
     App -->|"verifica sessão"| Auth
     UI -.->|"login/refresh de sessão\n(cookies httpOnly via @supabase/ssr)"| Auth
@@ -99,7 +99,9 @@ app-vinnicius/
 ├── supabase/
 │   └── migrations/                      # SQL versionado (fonte de verdade do schema)
 ├── docs/
-└── docker/
+├── Dockerfile
+├── docker-compose.yml                   # build/teste local e deploy no servidor
+└── .dockerignore
 ```
 
 Cada módulo (`financeiro`, `treinos`, `alimentacao`, `kanban`) é uma fatia vertical

@@ -24,6 +24,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Build enxuto para produção (Dockerfile copia só .next/standalone + static).
+  output: "standalone",
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

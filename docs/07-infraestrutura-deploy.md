@@ -1,84 +1,88 @@
 # Infraestrutura e Deploy
 
+> Revisado após inspecionar a instância real (ver [ADR-0004](adr/0004-nginx-compartilhado-em-vez-de-caddy.md)):
+> a EC2 já é compartilhada por outros projetos, com nginx + certbot como
+> convenção estabelecida. O plano abaixo substitui a v1 (Caddy dedicado).
+
 ## Topologia
 
 ```mermaid
 flowchart LR
     Internet -->|"443/tcp\nagenda.vinnisantos.com.br"| EC2
-    subgraph EC2["EC2 (única instância, ex. t3.small)"]
+    subgraph EC2["EC2 compartilhada (outros projetos também rodam aqui)"]
         direction TB
-        Caddy["Caddy\n:80/:443 públicos\nTLS automático (Let's Encrypt)"]
-        App["container next-app\n:3000 (somente rede docker)"]
-        Caddy --> App
+        Nginx["nginx (já existente)\n:80/:443 públicos, TLS via Certbot\num server{} por domínio"]
+        App["container Docker\n127.0.0.1:3002 (só loopback)"]
+        Nginx -->|"proxy_pass"| App
     end
     App -->|"HTTPS (fora da VPC)"| Supabase[("Supabase\nPostgres + Auth\ngerenciado, fora da EC2")]
 ```
 
-Uma única instância EC2 roda dois containers via `docker compose`: Caddy
-(proxy/TLS) e o app Next.js. Supabase é externo e gerenciado — não roda na EC2.
+O Life OS é **mais um site** nessa instância, não dono dela. Convenção já em uso
+por outros projetos (`governanca.vinnisantos.com.br` é o exemplo mais próximo,
+outro app Next.js) e replicada aqui:
+
+- Código em `/var/www/agenda-vinnisantos` (`git clone` do repo público).
+- Container roda só em `127.0.0.1:<porta>` — nunca `0.0.0.0` — só o nginx do
+  host precisa alcançá-lo.
+- Um arquivo em `/etc/nginx/sites-available/<nome>`, symlink em `sites-enabled/`.
+- Certificado via `certbot --nginx -d <domínio>` (reaproveita a conta já
+  registrada no Certbot desse servidor).
+
+**Porta atribuída ao Life OS: `3002`** (portas já em uso por outros projetos no
+momento do deploy: `3000`, `3001`, `5000` — dotnet/Next.js de outros clientes —
+e `8080` — container `marcai-app`). Antes de reutilizar esta porta no futuro,
+confirme com `ss -tlnp` que continua livre.
 
 ## DNS
 
-- Registro `A` (ou `CNAME`, conforme o provedor de DNS já usado por
-  `vinnisantos.com.br`) para `agenda.vinnisantos.com.br` apontando para o IP
-  elástico da instância EC2.
-- IP **elástico** (Elastic IP), não o IP público dinâmico da instância — evita
-  ter que atualizar o DNS a cada reinício/troca de instância.
+- `agenda.vinnisantos.com.br` já resolve para o IP público da instância
+  (confirmado antes do primeiro deploy) — nenhuma ação de DNS pendente.
 
 ## Container
 
-`Dockerfile` multi-stage:
-1. `deps` — instala dependências (`npm ci`).
-2. `builder` — `next build` com `output: 'standalone'` (bundle mínimo, sem
-   precisar do `node_modules` completo em produção).
-3. `runner` — imagem final `node:20-alpine`, roda como usuário não-root,
-   copia só o output standalone + estáticos.
+`Dockerfile` multi-stage (`deps` → `builder` com `next build`, `output:
+'standalone'` em `next.config.ts` → `runner` `node:20-alpine`, usuário
+não-root, só copia `.next/standalone` + `.next/static` + `public/`).
 
-`docker-compose.yml` na instância define os dois serviços (`app`, `caddy`),
-uma rede interna compartilhada, e monta:
-- `Caddyfile` (config do proxy — bloco único para o domínio, `reverse_proxy
-  app:3000`).
-- Volume nomeado para `caddy_data` (persistência do certificado TLS entre
-  restarts).
-- `.env.production` injetado via `env_file` (nunca via `ARG`/`ENV` no
-  Dockerfile, para não vazar segredo na imagem).
+`docker-compose.yml` sobe um serviço único (`app`), publica em
+`127.0.0.1:3002:3000`, injeta segredos via `env_file: .env.production` (nunca
+`ARG`/`ENV` no Dockerfile — não vaza no `docker history`).
 
-## Pipeline de deploy
+## Deploy (v1 — manual, sem CI/CD ainda)
 
 ```mermaid
 flowchart LR
-    PR["Pull Request"] -->|"CI: lint + typecheck + testes"| CI["GitHub Actions"]
-    CI -->|merge em main| Build["build da imagem Docker"]
-    Build -->|"push"| Registry["GitHub Container Registry (ghcr.io)"]
-    Registry -->|"SSH: docker compose pull && up -d"| EC2
+    Dev["git push (local)"] --> GH["GitHub — repo público"]
+    GH -->|"git pull"| EC2["/var/www/agenda-vinnisantos"]
+    EC2 -->|"docker compose up -d --build"| App["container app"]
+    App -.->|"primeira vez"| Nginx["vhost + certbot"]
 ```
 
-- CI (GitHub Actions) roda em todo PR: `lint`, `typecheck`, testes,
-  `drizzle-kit check` (detecta migration pendente não commitada).
-- Merge em `main` builda e publica a imagem no GHCR, tag `latest` + SHA do
-  commit.
-- Deploy é acionado por um step de CI que conecta via SSH (chave dedicada,
-  restrita a esse único comando) e roda `docker compose pull && docker compose
-  up -d` na instância — sem downtime perceptível (restart de container único,
-  aceitável para app pessoal; sem necessidade de blue-green).
-- Migrations do Drizzle rodam como step **manual, antes** do deploy da nova
-  imagem quando há mudança de schema — nunca automático no boot do container,
-  para nunca rodar uma migration destrutiva sem revisão.
+- Sem pipeline de CI/CD ainda (nem GHCR, nem GitHub Actions) — o deploy é
+  manual via SSM Session Manager: `git pull` no diretório do projeto,
+  `docker compose up -d --build`.
+- `.env.production` vive só no servidor (nunca commitado), com as mesmas
+  chaves de `.env.example`.
+- Migrations do Drizzle continuam manuais (via MCP/`psql`/Supabase Studio),
+  nunca automáticas no boot do container — mesma regra da v1.
+- **Próxima melhoria natural, não v1:** GitHub Actions rodando lint/typecheck
+  em todo PR e, no merge, disparando o `git pull && docker compose up -d
+  --build` via SSM automaticamente — documentado aqui como próximo passo, não
+  implementado ainda.
 
-## Provisionamento da instância (uma vez)
+## Acesso à instância
 
-1. EC2 `t3.small` (ou menor — app pessoal, tráfego baixo), Ubuntu LTS.
-2. Security Group: só `22` (SSH, restrito ao IP do Vinnicius ou via chave),
-   `80` e `443` públicos. Nenhuma outra porta exposta.
-3. Docker + Docker Compose instalados.
-4. Usuário não-root dedicado ao deploy, chave SSH própria (não a chave
-   pessoal de admin da AWS).
-5. `ufw` (firewall do SO) espelhando o Security Group como segunda camada.
+- Acesso via **AWS SSM Session Manager** (`aws ssm start-session --target
+  <instance-id>`), não SSH direto — não depende de chave exposta nem de porta
+  22 aberta para o IP de quem está deployando.
+- Sessão abre como `root` (papel da instância já configurado assim pelo
+  ambiente existente) — cuidado redobrado com qualquer comando que afete
+  `/etc/nginx` ou containers de outros projetos na mesma máquina.
 
 ## Observabilidade
 
-- Logs do container via `docker compose logs` / driver `json-file` com
-  `max-size` limitado (evita disco cheio na instância pequena).
-- Sem stack de observabilidade dedicada na v1 (sem Grafana/Prometheus) — escopo
-  desproporcional para um app de usuário único. Revisitar se o app crescer
-  para uso de mais pessoas.
+- Logs do container via `docker compose logs` / `docker logs`.
+- Sem stack de observabilidade dedicada — escopo desproporcional para um app
+  de usuário único, e a instância já não tem uma para os outros projetos
+  hospedados nela.

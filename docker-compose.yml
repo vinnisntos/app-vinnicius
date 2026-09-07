@@ -1,0 +1,13 @@
+# Uso local (`docker compose up --build`) e no servidor (ver
+# docs/07-infraestrutura-deploy.md). Em produção, o nginx do host faz proxy
+# para 127.0.0.1:3002 — só loopback, a porta não fica exposta na internet.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:3002:3000"
+    env_file:
+      - .env.production
+    restart: unless-stopped

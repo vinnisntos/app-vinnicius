@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gitignore
+
+# env com segredos reais — nunca deve entrar no contexto de build
+.env
+.env.local
+.env.*.local
+.env.production
+
+docs
+supabase
+*.md
