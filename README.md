@@ -36,8 +36,9 @@ Leia nesta ordem:
 
 ## Stack (resumo)
 
-Next.js 15 (App Router/TS) · Supabase (Postgres + Auth + RLS) · Drizzle ORM ·
-Tailwind CSS v4 + shadcn/ui · Docker atrás do nginx compartilhado em AWS EC2.
+Next.js 16 (App Router/TS) · Supabase (Postgres + Auth + RLS) · Drizzle ORM ·
+Tailwind CSS v4 + shadcn/ui · Docker atrás do nginx compartilhado em AWS EC2,
+imagem buildada no GitHub Actions ([ADR-0005](docs/adr/0005-build-fora-da-ec2.md)).
 
 Justificativa completa em [`docs/adr/0001-escolha-de-stack.md`](docs/adr/0001-escolha-de-stack.md).
 
@@ -56,5 +57,6 @@ o schema completo (tabelas, RLS, triggers de seed). Como não há tela de
 cadastro (ver [ADR-0003](docs/adr/0003-autenticacao-supabase.md)), crie o
 usuário manualmente em Authentication > Users no painel Supabase.
 
-Outros scripts: `npm run build`, `npm run lint`, `npm run db:studio` (abre o
+Outros scripts: `npm run build`, `npm run lint`, `npm run test` (Vitest —
+hoje só as funções puras do módulo Alimentação), `npm run db:studio` (abre o
 Drizzle Studio para inspecionar o banco).

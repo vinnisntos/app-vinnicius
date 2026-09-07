@@ -25,8 +25,12 @@
 
 ## Qualidade
 
-- **Lint:** ESLint (config Next.js) + Prettier, rodando em pre-commit (Husky +
-  lint-staged) e em CI — nunca só um dos dois.
+- **Lint:** ESLint (config Next.js). Roda manualmente (`npm run lint`) antes
+  de cada commit — **ainda não há hook de pre-commit (Husky/lint-staged) nem
+  job de CI rodando lint/typecheck/testes automaticamente**; o único workflow
+  hoje (`.github/workflows/build-and-push.yml`) só builda e publica a imagem
+  Docker. Adicionar esse gate é o próximo passo de qualidade mais óbvio —
+  documentado aqui, não implementado ainda.
 - **Testes:**
   - Unitário nas funções puras de regra de negócio (cálculo de TDEE/déficit,
     derivação do próximo dia de treino A/B, agregação de saldo mensal) — são as
@@ -53,23 +57,33 @@
 Ordem escolhida para ter, o quanto antes, um app **usável fim-a-fim** (login +
 1 módulo completo) antes de espalhar esforço pelos outros módulos:
 
-1. **Fundação:** projeto Next.js, Tailwind/shadcn temeado
-   ([`05-design-system.md`](05-design-system.md)), Supabase (projeto +
-   migrations iniciais: `profiles`, trigger de criação), Drizzle configurado,
-   tela de login + middleware de proteção de rota, layout com navegação dos 5
-   módulos (telas vazias).
-2. **Alimentação** (módulo mais autocontido, valida o padrão de vertical
-   slice ponta a ponta: schema → repository → action → UI).
-3. **Treinos.**
-4. **Financeiro.**
-5. **Estudos e Trabalhos (Kanban)** — deixado para depois por ter a UI mais
+1. ✅ **Fundação** (2026-09-07) — projeto Next.js, Tailwind/shadcn temeado
+   ([`05-design-system.md`](05-design-system.md)), Supabase (projeto
+   `agenda-vinni` + migration `0001_init.sql`: schema completo dos 5
+   módulos, RLS, triggers de seed), Drizzle configurado, tela de login +
+   proxy de proteção de rota, layout com navegação dos 5 módulos.
+2. ✅ **Alimentação** (2026-09-07) — vertical slice completo (schema →
+   repository → server actions → UI): TDEE (Mifflin-St Jeor, com testes
+   unitários), checklist de refeições, água e peso. Testado ponta a ponta
+   contra o Supabase real, em produção.
+3. ⬜ **Treinos** — próximo.
+4. ⬜ **Financeiro.**
+5. ⬜ **Estudos e Trabalhos (Kanban)** — deixado para depois por ter a UI mais
    complexa (drag-and-drop).
-6. **Dashboard** — por último de propósito: só depois de 2-5 existirem é que
-   há dado real de cada módulo para compor a visão consolidada.
-7. **Deploy em produção** ([`07-infraestrutura-deploy.md`](07-infraestrutura-
-   deploy.md)) — feito assim que a Fundação + 1 módulo estiverem prontos, não
-   só no final; validar infra cedo evita surpresa de deploy com o app inteiro
-   pronto.
+6. ⬜ **Dashboard** — por último de propósito: só depois de 2-5 existirem é
+   que há dado real de cada módulo para compor a visão consolidada. Hoje é
+   um placeholder com saudação + cards estáticos.
+7. ✅ **Deploy em produção** (2026-09-07) — `agenda.vinnisantos.com.br`, ver
+   [`07-infraestrutura-deploy.md`](07-infraestrutura-deploy.md). Feito já na
+   Fase 1, antes dos módulos restantes, como planejado: validar infra cedo
+   evitou que a superfície de risco crescesse até o fim do projeto.
+
+**Pendências abertas conhecidas** (não bloqueiam o uso, mas valem registrar):
+- Sem CI de lint/typecheck/testes (só o build+push da imagem) — ver seção
+  Qualidade acima.
+- Deploy na EC2 ainda é manual (`git pull && docker compose pull && up -d`
+  via SSM) — automatizar o disparo a partir do GitHub Actions é o próximo
+  passo natural, ver [ADR-0005](adr/0005-build-fora-da-ec2.md).
 
 ## Rastreamento de decisões
 
