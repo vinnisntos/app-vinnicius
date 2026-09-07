@@ -9,9 +9,19 @@ const PUBLIC_PATHS = ["/login"];
  * Proxy pode ser contornado por um matcher mal configurado, então
  * `requireUserId()` (lib/auth/session.ts) reverifica dentro do layout
  * protegido.
+ *
+ * `requestHeaders` (com o nonce da CSP, ver src/proxy.ts) é repassado a todo
+ * `NextResponse.next()` para chegar ao render da página — sem isso o Next
+ * não injeta o nonce no próprio script inline de bootstrap, e a CSP bloqueia
+ * a hidratação inteira sem erro óbvio nenhum.
  */
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+export async function updateSession(
+  request: NextRequest,
+  requestHeaders: Headers,
+) {
+  let supabaseResponse = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,7 +35,9 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = NextResponse.next({
+            request: { headers: requestHeaders },
+          });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
           );

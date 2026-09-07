@@ -71,18 +71,30 @@ com o mesmo rigor de um app multiusuário.
 
 ## Transporte e infraestrutura
 
-- TLS obrigatório em produção — Caddy providencia certificado Let's Encrypt
-  automático para `agenda.vinnisantos.com.br` e força redirect HTTP→HTTPS.
-- Headers de segurança configurados no Next.js (`next.config.ts`):
+- TLS obrigatório em produção — nginx + Certbot providenciam o certificado
+  Let's Encrypt para `agenda.vinnisantos.com.br` e forçam redirect HTTP→HTTPS
+  (ver [ADR-0004](adr/0004-nginx-compartilhado-em-vez-de-caddy.md)).
+- Headers de segurança estáticos configurados no Next.js (`next.config.ts`):
   `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`,
   `X-Frame-Options: DENY` (o app não precisa ser embutido em iframe),
-  `Referrer-Policy: strict-origin-when-cross-origin`, e uma
-  `Content-Security-Policy` restritiva (script-src limitado ao próprio domínio
-  + Supabase).
-- Porta do container Next.js **não exposta diretamente** na internet — só
-  Caddy escuta 80/443 publicamente; o app escuta em uma porta interna,
-  acessível apenas via rede Docker (ver [`07-infraestrutura-
-  deploy.md`](07-infraestrutura-deploy.md)).
+  `Referrer-Policy: strict-origin-when-cross-origin`.
+- **`Content-Security-Policy` vem do proxy (`src/proxy.ts`), não do
+  `next.config.ts`** — precisa ser gerada por request porque usa um nonce
+  aleatório em `script-src`. O Next.js injeta um `<script>` inline no HTML
+  para o próprio bootstrap do cliente (define `window.__next_r`); sem o
+  nonce, esse script cai sob a CSP como qualquer outro inline script e é
+  bloqueado — e como ele roda antes da hidratação, **o app inteiro fica
+  não-interativo, em silêncio, sem nenhum erro de aplicação óbvio no
+  console** (só um aviso de CSP, fácil de não notar). O proxy gera um nonce
+  por request, injeta como `'nonce-<valor>'` em `script-src` e repassa via
+  `x-nonce`/header da própria CSP nos headers do request encaminhado — é
+  assim que o Next.js sabe qual nonce usar ao renderizar. Em dev, `script-src`
+  também precisa de `'unsafe-eval'` (Fast Refresh do Turbopack/webpack usa
+  `eval()`), condicionado a `NODE_ENV !== 'production'`.
+- Porta do container Next.js **não exposta diretamente** na internet — só o
+  nginx do host escuta 80/443 publicamente; o app escuta em
+  `127.0.0.1:<porta>`, só alcançável pelo próprio host (ver
+  [`07-infraestrutura-deploy.md`](07-infraestrutura-deploy.md)).
 - Atualizações de dependências: `npm audit`/Dependabot habilitado no repositório
   GitHub, revisão manual de PRs de atualização antes de merge.
 
