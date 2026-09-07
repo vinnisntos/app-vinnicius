@@ -1,0 +1,135 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Tokens herdados de vinnisantos.com.br (ver docs/05-design-system.md).
+ * O app é dark-mode nativo: `:root` e `.dark` carregam a mesma paleta —
+ * não existe variação clara, a classe `dark` no <html> é só para manter os
+ * componentes shadcn/ui que dependem do seletor `.dark` funcionando.
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "Fira Code",
+    "Cascadia Code", monospace;
+  --font-heading: var(--font-sans);
+
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-900: var(--brand-900);
+  --color-success-500: var(--success-500);
+  --color-danger-500: var(--danger-500);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root,
+.dark {
+  color-scheme: dark;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+
+  --background: #09090b;
+  --foreground: #ffffff;
+
+  /* Marca — violeta, extraído de vinnisantos.com.br */
+  --brand-400: #c084fc;
+  --brand-500: #a855f7;
+  --brand-600: #9333ea;
+  --brand-900: #3b0764;
+
+  --success-500: oklch(72.3% 0.219 149.579);
+  --danger-500: oklch(63.7% 0.237 25.331);
+
+  /* Superfícies "vidro": tinta translúcida sobre o --background, nunca cor sólida */
+  --card: rgb(255 255 255 / 0.05);
+  --card-foreground: var(--foreground);
+  --popover: #18181b;
+  --popover-foreground: var(--foreground);
+
+  --primary: var(--brand-600);
+  --primary-foreground: #ffffff;
+  --secondary: rgb(255 255 255 / 0.05);
+  --secondary-foreground: var(--foreground);
+  --muted: rgb(255 255 255 / 0.08);
+  --muted-foreground: oklch(70.7% 0.022 261.325);
+  --accent: rgb(255 255 255 / 0.08);
+  --accent-foreground: var(--foreground);
+  --destructive: var(--danger-500);
+
+  --border: rgb(255 255 255 / 0.1);
+  --input: rgb(255 255 255 / 0.05);
+  --ring: var(--brand-500);
+
+  --chart-1: var(--brand-400);
+  --chart-2: var(--brand-600);
+  --chart-3: var(--success-500);
+  --chart-4: var(--danger-500);
+  --chart-5: oklch(55.1% 0.027 264.364);
+
+  --radius: 0.5rem;
+
+  --sidebar: var(--background);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--brand-600);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgb(255 255 255 / 0.05);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--brand-500);
+
+  /* Halo suave em torno de elementos primários — usar com moderação (1-2 por tela) */
+  --shadow-glow: 0 0 24px rgb(168 85 247 / 0.3);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
