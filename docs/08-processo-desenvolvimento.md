@@ -66,8 +66,12 @@ Ordem escolhida para ter, o quanto antes, um app **usável fim-a-fim** (login +
    repository → server actions → UI): TDEE (Mifflin-St Jeor, com testes
    unitários), checklist de refeições, água e peso. Testado ponta a ponta
    contra o Supabase real, em produção.
-3. ⬜ **Treinos** — próximo.
-4. ⬜ **Financeiro.**
+3. ✅ **Treinos** (2026-09-09) — plano de calistenia AB (criação + editor de
+   exercícios por dia), derivação automática do próximo dia (A/B, com
+   testes unitários), registro de séries por sessão (upsert por
+   sessão+exercício+série), histórico com volume calculado. Testado ponta a
+   ponta contra o Supabase real, ainda não implantado em produção.
+4. ⬜ **Financeiro** — próximo.
 5. ⬜ **Estudos e Trabalhos (Kanban)** — deixado para depois por ter a UI mais
    complexa (drag-and-drop).
 6. ⬜ **Dashboard** — por último de propósito: só depois de 2-5 existirem é
