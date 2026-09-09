@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -33,9 +33,11 @@ const TYPE_LABELS: Record<TransactionType, string> = {
 export function TransactionFormDialog({
   categories,
   todayIso,
+  trigger,
 }: {
   categories: FinanceCategory[];
   todayIso: string;
+  trigger?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<TransactionType>("despesa");
@@ -90,9 +92,11 @@ export function TransactionFormDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button className="shadow-[var(--shadow-glow)]">
-          <Plus className="size-4" /> Nova transação
-        </Button>
+        {trigger ?? (
+          <Button className="shadow-[var(--shadow-glow)]">
+            <Plus className="size-4" /> Nova transação
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

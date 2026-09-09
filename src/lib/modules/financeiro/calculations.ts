@@ -62,3 +62,24 @@ export function getMonthDateRange(yearMonth: string): {
 export function getYearMonth(isoDate: string): string {
   return isoDate.slice(0, 7);
 }
+
+/** Mês anterior a "YYYY-MM", sem passar por `Date` (evita fuso horário). */
+export function getPreviousYearMonth(yearMonth: string): string {
+  const [year, month] = yearMonth.split("-").map(Number);
+  const previousYear = month === 1 ? year - 1 : year;
+  const previousMonth = month === 1 ? 12 : month - 1;
+  return `${previousYear}-${String(previousMonth).padStart(2, "0")}`;
+}
+
+/**
+ * Move uma data ISO para o mesmo dia em outro mês "YYYY-MM", limitando ao
+ * último dia válido do mês alvo (ex.: dia 31 de janeiro vira dia 28/29 em
+ * fevereiro) — usado para repetir transações recorrentes de um mês a outro.
+ */
+export function shiftDateToMonth(occurredOn: string, targetYearMonth: string): string {
+  const day = Number(occurredOn.slice(8, 10));
+  const { end } = getMonthDateRange(targetYearMonth);
+  const lastDayOfTargetMonth = Number(end.slice(8, 10));
+  const clampedDay = Math.min(day, lastDayOfTargetMonth);
+  return `${targetYearMonth}-${String(clampedDay).padStart(2, "0")}`;
+}

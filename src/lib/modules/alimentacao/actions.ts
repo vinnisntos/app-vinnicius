@@ -51,6 +51,7 @@ export async function toggleMeal(input: ToggleMealInput): Promise<ActionResult> 
   const userId = await requireUserId();
   await repository.toggleMeal(userId, parsed.data);
   revalidatePath("/alimentacao");
+  revalidatePath("/");
   return {};
 }
 
@@ -63,5 +64,6 @@ export async function logWater(input: LogWaterInput): Promise<ActionResult> {
   const userId = await requireUserId();
   await repository.logWater(userId, parsed.data);
   revalidatePath("/alimentacao");
+  revalidatePath("/");
   return {};
 }

@@ -80,6 +80,11 @@ sem forçar uma sobre a outra.
 **Escrita**
 - `createTransaction(input)` / `updateTransaction(id, input)` / `deleteTransaction(id)`.
 - `createCategory(input)`.
+- `repeatRecurringTransactions()` — clona para o mês corrente as transações
+  com `is_recurring = true` do mês anterior, ajustando a data
+  (`shiftDateToMonth`, limitada ao último dia do mês corrente). Só permitido
+  quando o mês corrente ainda não tem nenhum lançamento — evita duplicar em
+  cliques repetidos sem precisar de lógica de deduplicação.
 
 Regra de negócio única e explícita (evita ambiguidade de sinal): `amount` é
 sempre positivo no banco; o repository decide soma ou subtração no agregado do
@@ -103,7 +108,7 @@ mês com base em `type` (`receita_*` soma, `despesa` subtrai).
 
 ## Dashboard
 
-Somente leitura, agregando os módulos acima — sem escrita própria:
+Sem tabelas e sem server actions próprias — mas não é mais 100% passivo:
 
 - `getDailyOverview(date)` retorna:
   ```ts
@@ -115,9 +120,14 @@ Somente leitura, agregando os módulos acima — sem escrita própria:
     monthBalancePreview: number      // saldo parcial do mês corrente
   }
   ```
-
-Cada campo é resolvido chamando a função pública do módulo dono do dado — o
-Dashboard nunca faz `select` direto em tabela de outro módulo.
+  Cada campo é resolvido chamando a função pública do módulo dono do dado — o
+  Dashboard nunca faz `select` direto em tabela de outro módulo.
+- **Ações rápidas** nos cards (marcar refeição, registrar água, nova
+  transação) chamam diretamente as server actions já existentes dos módulos
+  donos (`toggleMeal`/`logWater` de Alimentação, `createTransaction` de
+  Financeiro) — o Dashboard não ganha mutação própria, só reusa a action
+  pública de quem já tinha o dado. Por isso `toggleMeal`, `logWater` e
+  `createTransaction` revalidam tanto a página do módulo quanto `/`.
 
 ---
 

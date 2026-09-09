@@ -4,14 +4,11 @@ import { useState, type ReactNode } from "react";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Logo } from "./logo";
 import { SidebarNav } from "./sidebar-nav";
 import { SignOutButton } from "./sign-out-button";
 
-const BRAND = (
-  <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase">
-    Life OS
-  </p>
-);
+const BRAND = <Logo />;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);

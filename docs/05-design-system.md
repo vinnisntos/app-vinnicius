@@ -92,6 +92,13 @@ resolvida) e re-temear via tokens acima, não recriar componentes do zero:
   preenchimento `accent-500`; quando a meta é "não ultrapassar" (ex. calorias),
   preenchimento vira `danger-500` ao passar de 100%.
 
+## Marca
+
+`src/components/layout/logo.tsx` — marca própria do app (`LogoMark` +
+`Logo`): quadrado `brand-600` com um pulso de ECG em branco, mesma peça
+reaproveitada como favicon (`src/app/icon.svg`). Só forma geométrica e cor
+sólida, sem ilustração — a mesma regra da seção Personalidade.
+
 ## Layout
 
 - Container principal `max-w-7xl` (80rem) centralizado, como o site.

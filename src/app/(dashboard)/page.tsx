@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireUserId } from "@/lib/auth/session";
 import { getTodayIsoDate } from "@/lib/date";
 import { getDailyOverview } from "@/lib/modules/dashboard/repository";
+import { getCategories } from "@/lib/modules/financeiro/repository";
 import { createClient } from "@/lib/supabase/server";
 import { FinanceSummaryCard } from "@/components/dashboard/finance-summary-card";
 import { KanbanSummaryCard } from "@/components/dashboard/kanban-summary-card";
@@ -29,7 +30,10 @@ export default async function DashboardPage() {
     "";
 
   const todayIso = getTodayIsoDate();
-  const overview = await getDailyOverview(userId, todayIso);
+  const [overview, categories] = await Promise.all([
+    getDailyOverview(userId, todayIso),
+    getCategories(userId),
+  ]);
 
   const now = new Date();
   const hour = Number(
@@ -74,9 +78,17 @@ export default async function DashboardPage() {
           dayLabel={overview.workout.dayLabel}
           done={overview.workout.done}
         />
-        <NutritionSummaryCard meals={overview.meals} water={overview.water} />
+        <NutritionSummaryCard
+          meals={overview.meals}
+          water={overview.water}
+          todayIso={todayIso}
+        />
         <KanbanSummaryCard pendingCards={overview.pendingCards} todayIso={todayIso} />
-        <FinanceSummaryCard balance={overview.monthBalancePreview} />
+        <FinanceSummaryCard
+          balance={overview.monthBalancePreview}
+          categories={categories}
+          todayIso={todayIso}
+        />
       </div>
     </div>
   );

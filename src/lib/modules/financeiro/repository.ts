@@ -1,7 +1,7 @@
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { financeCategories, financeTransactions } from "@/lib/db/schema";
-import { getMonthDateRange, type TransactionType } from "./calculations";
+import { getMonthDateRange, shiftDateToMonth, type TransactionType } from "./calculations";
 import type {
   CreateCategoryInput,
   CreateTransactionInput,
@@ -111,6 +111,29 @@ export async function deleteTransaction(userId: string, id: string) {
   await db
     .delete(financeTransactions)
     .where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, userId)));
+}
+
+export async function cloneTransactionsToMonth(
+  userId: string,
+  transactions: Pick<
+    TransactionWithCategory,
+    "type" | "description" | "amount" | "occurredOn" | "categoryId"
+  >[],
+  targetYearMonth: string,
+) {
+  if (transactions.length === 0) return;
+
+  await db.insert(financeTransactions).values(
+    transactions.map((t) => ({
+      userId,
+      type: t.type,
+      description: t.description,
+      amount: t.amount.toString(),
+      occurredOn: shiftDateToMonth(t.occurredOn, targetYearMonth),
+      categoryId: t.categoryId,
+      isRecurring: true,
+    })),
+  );
 }
 
 export async function createCategory(userId: string, input: CreateCategoryInput) {

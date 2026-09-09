@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   computeMonthBalance,
   getMonthDateRange,
+  getPreviousYearMonth,
   getYearMonth,
+  shiftDateToMonth,
 } from "./calculations";
 
 describe("computeMonthBalance", () => {
@@ -65,5 +67,29 @@ describe("getMonthDateRange", () => {
 describe("getYearMonth", () => {
   it("extrai YYYY-MM de uma data ISO", () => {
     expect(getYearMonth("2026-09-15")).toBe("2026-09");
+  });
+});
+
+describe("getPreviousYearMonth", () => {
+  it("volta um mês dentro do mesmo ano", () => {
+    expect(getPreviousYearMonth("2026-09")).toBe("2026-08");
+  });
+
+  it("volta o ano ao cruzar de janeiro para dezembro", () => {
+    expect(getPreviousYearMonth("2026-01")).toBe("2025-12");
+  });
+});
+
+describe("shiftDateToMonth", () => {
+  it("mantém o mesmo dia quando o mês alvo tem dias suficientes", () => {
+    expect(shiftDateToMonth("2026-08-05", "2026-09")).toBe("2026-09-05");
+  });
+
+  it("limita ao último dia do mês alvo quando o dia de origem não existe", () => {
+    expect(shiftDateToMonth("2026-01-31", "2026-02")).toBe("2026-02-28");
+  });
+
+  it("limita ao dia 29 em fevereiro bissexto", () => {
+    expect(shiftDateToMonth("2028-01-31", "2028-02")).toBe("2028-02-29");
   });
 });

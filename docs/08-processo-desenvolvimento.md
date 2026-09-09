@@ -91,6 +91,13 @@ Ordem escolhida para ter, o quanto antes, um app **usável fim-a-fim** (login +
    [`07-infraestrutura-deploy.md`](07-infraestrutura-deploy.md). Feito já na
    Fase 1, antes dos módulos restantes, como planejado: validar infra cedo
    evitou que a superfície de risco crescesse até o fim do projeto.
+8. ✅ **Polimento pós-lançamento** (2026-09-09) — com os 5 módulos prontos:
+   marca própria (`Logo`/`LogoMark`, favicon, ver
+   [`05-design-system.md`](05-design-system.md#marca)); ações rápidas no
+   Dashboard (marcar refeição, registrar água, nova transação) reusando as
+   server actions dos módulos donos; repetição de transações recorrentes no
+   Financeiro (`repeatRecurringTransactions`) para não reentrar renda
+   fixa/despesas fixas todo mês manualmente.
 
 **Pendências abertas conhecidas** (não bloqueiam o uso, mas valem registrar):
 - Sem CI de lint/typecheck/testes (só o build+push da imagem) — ver seção
