@@ -1,20 +1,22 @@
 import type { Metadata } from "next";
-import { SquareKanban } from "lucide-react";
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+import { requireUserId } from "@/lib/auth/session";
+import { getTodayIsoDate } from "@/lib/date";
+import { getBoard } from "@/lib/modules/estudos-trabalhos/repository";
+import { KanbanBoard } from "@/components/estudos-trabalhos/kanban-board";
 
 export const metadata: Metadata = { title: "Estudos e Trabalhos" };
 
-export default function EstudosTrabalhosPage() {
+export default async function EstudosTrabalhosPage() {
+  const userId = await requireUserId();
+  const todayIso = getTodayIsoDate();
+  const columns = await getBoard(userId);
+
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold tracking-tighter">
         Estudos e Trabalhos
       </h1>
-      <ModulePlaceholder
-        icon={SquareKanban}
-        title="Em construção"
-        description="Kanban de provas, trabalhos, estágio e projetos pessoais chega em uma próxima fase da implementação."
-      />
+      <KanbanBoard initialColumns={columns} todayIso={todayIso} />
     </div>
   );
 }

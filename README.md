@@ -4,8 +4,8 @@ Sistema pessoal de gestão de rotina de Vinnicius Santos: centraliza estudos, es
 treino, alimentação e finanças em um único painel diário.
 
 > **Status:** em produção em `agenda.vinnisantos.com.br`. Fundação,
-> **Alimentação**, **Treinos** e **Financeiro** completos e testados ponta a
-> ponta. Próximo: Estudos e Trabalhos (ver
+> **Alimentação**, **Treinos**, **Financeiro** e **Estudos e Trabalhos**
+> completos e testados ponta a ponta. Próximo: Dashboard (ver
 > [`docs/08-processo-desenvolvimento.md`](docs/08-processo-desenvolvimento.md#fases-de-implementação)).
 
 ## Módulos
@@ -58,5 +58,5 @@ cadastro (ver [ADR-0003](docs/adr/0003-autenticacao-supabase.md)), crie o
 usuário manualmente em Authentication > Users no painel Supabase.
 
 Outros scripts: `npm run build`, `npm run lint`, `npm run test` (Vitest —
-hoje só as funções puras do módulo Alimentação), `npm run db:studio` (abre o
-Drizzle Studio para inspecionar o banco).
+funções puras de Alimentação, Treinos, Financeiro e Estudos e Trabalhos),
+`npm run db:studio` (abre o Drizzle Studio para inspecionar o banco).

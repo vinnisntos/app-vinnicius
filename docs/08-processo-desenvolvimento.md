@@ -76,8 +76,12 @@ Ordem escolhida para ter, o quanto antes, um app **usável fim-a-fim** (login +
    criação do usuário), transação recorrente, saldo do mês calculado
    (`computeMonthBalance`, com testes unitários incl. ano bissexto).
    Testado ponta a ponta contra o Supabase real.
-5. ⬜ **Estudos e Trabalhos (Kanban)** — próximo, deixado para depois por ter
-   a UI mais complexa (drag-and-drop).
+5. ✅ **Estudos e Trabalhos (Kanban)** (2026-09-09) — colunas e cartões com
+   categoria/prioridade/prazo, drag-and-drop entre colunas via `@dnd-kit`
+   (reordenação testada com unidade em `reorderAfterMove`), reordenação de
+   coluna por botões (mais simples e confiável que arrastar colunas, dado o
+   ganho marginal frente à complexidade de contextos `dnd-kit` aninhados).
+   Testado ponta a ponta contra o Supabase real.
 6. ⬜ **Dashboard** — por último de propósito: só depois de 2-5 existirem é
    que há dado real de cada módulo para compor a visão consolidada. Hoje é
    um placeholder com saudação + cards estáticos.
