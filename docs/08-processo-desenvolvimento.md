@@ -69,8 +69,8 @@ Ordem escolhida para ter, o quanto antes, um app **usável fim-a-fim** (login +
 3. ✅ **Treinos** (2026-09-09) — plano de calistenia AB (criação + editor de
    exercícios por dia), derivação automática do próximo dia (A/B, com
    testes unitários), registro de séries por sessão (upsert por
-   sessão+exercício+série), histórico com volume calculado. Testado ponta a
-   ponta contra o Supabase real, ainda não implantado em produção.
+   sessão+exercício+série), histórico com volume calculado. Testado e em
+   produção.
 4. ⬜ **Financeiro** — próximo.
 5. ⬜ **Estudos e Trabalhos (Kanban)** — deixado para depois por ter a UI mais
    complexa (drag-and-drop).
