@@ -71,9 +71,13 @@ Ordem escolhida para ter, o quanto antes, um app **usável fim-a-fim** (login +
    testes unitários), registro de séries por sessão (upsert por
    sessão+exercício+série), histórico com volume calculado. Testado e em
    produção.
-4. ⬜ **Financeiro** — próximo.
-5. ⬜ **Estudos e Trabalhos (Kanban)** — deixado para depois por ter a UI mais
-   complexa (drag-and-drop).
+4. ✅ **Financeiro** (2026-09-09) — fluxo de caixa (receita fixa, variável,
+   despesas), categorias filtradas por tipo (seedadas automaticamente na
+   criação do usuário), transação recorrente, saldo do mês calculado
+   (`computeMonthBalance`, com testes unitários incl. ano bissexto).
+   Testado ponta a ponta contra o Supabase real.
+5. ⬜ **Estudos e Trabalhos (Kanban)** — próximo, deixado para depois por ter
+   a UI mais complexa (drag-and-drop).
 6. ⬜ **Dashboard** — por último de propósito: só depois de 2-5 existirem é
    que há dado real de cada módulo para compor a visão consolidada. Hoje é
    um placeholder com saudação + cards estáticos.
