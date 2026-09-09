@@ -1,22 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Apple, Dumbbell, SquareKanban, Wallet } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { requireUserId } from "@/lib/auth/session";
+import { getTodayIsoDate } from "@/lib/date";
+import { getDailyOverview } from "@/lib/modules/dashboard/repository";
 import { createClient } from "@/lib/supabase/server";
+import { FinanceSummaryCard } from "@/components/dashboard/finance-summary-card";
+import { KanbanSummaryCard } from "@/components/dashboard/kanban-summary-card";
+import { NutritionSummaryCard } from "@/components/dashboard/nutrition-summary-card";
+import { WorkoutSummaryCard } from "@/components/dashboard/workout-summary-card";
 
 export const metadata: Metadata = { title: "Dashboard" };
-
-const SUMMARY_CARDS = [
-  { href: "/financeiro", label: "Financeiro", icon: Wallet, hint: "Saldo do mês" },
-  { href: "/treinos", label: "Treinos", icon: Dumbbell, hint: "Treino de hoje" },
-  { href: "/alimentacao", label: "Alimentação", icon: Apple, hint: "Calorias e água" },
-  {
-    href: "/estudos-trabalhos",
-    label: "Estudos e Trabalhos",
-    icon: SquareKanban,
-    hint: "Pendências de hoje",
-  },
-] as const;
 
 function getGreeting(hour: number) {
   if (hour < 12) return "Bom dia";
@@ -25,6 +17,7 @@ function getGreeting(hour: number) {
 }
 
 export default async function DashboardPage() {
+  const userId = await requireUserId();
   const supabase = await createClient();
   const {
     data: { user },
@@ -34,6 +27,9 @@ export default async function DashboardPage() {
     (user?.user_metadata?.full_name as string | undefined) ??
     user?.email?.split("@")[0] ??
     "";
+
+  const todayIso = getTodayIsoDate();
+  const overview = await getDailyOverview(userId, todayIso);
 
   const now = new Date();
   const hour = Number(
@@ -66,34 +62,21 @@ export default async function DashboardPage() {
             {displayName ? `, ${displayName}` : ""}.
           </h1>
           <p className="mt-3 max-w-lg text-sm text-muted-foreground">
-            O checklist diário consolidado (treino, refeições, água e
-            pendências) aparece aqui assim que os módulos abaixo forem
-            implementados.
+            Seu checklist diário: treino, refeições, água, pendências e o
+            saldo do mês, tudo num só lugar.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {SUMMARY_CARDS.map((item) => (
-          <Link key={item.href} href={item.href}>
-            <Card className="transition-colors duration-150 hover:ring-brand-500/30">
-              <CardHeader className="flex-row items-center gap-3 space-y-0">
-                <div className="flex size-9 items-center justify-center rounded-lg bg-brand-600/10 text-brand-400">
-                  <item.icon className="size-4" aria-hidden />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">{item.label}</p>
-                  <p className="text-xs text-muted-foreground">{item.hint}</p>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-2 w-full rounded-full bg-white/5">
-                  <div className="h-2 w-0 rounded-full bg-brand-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <WorkoutSummaryCard
+          hasPlan={overview.workout.hasPlan}
+          dayLabel={overview.workout.dayLabel}
+          done={overview.workout.done}
+        />
+        <NutritionSummaryCard meals={overview.meals} water={overview.water} />
+        <KanbanSummaryCard pendingCards={overview.pendingCards} todayIso={todayIso} />
+        <FinanceSummaryCard balance={overview.monthBalancePreview} />
       </div>
     </div>
   );

@@ -82,9 +82,11 @@ Ordem escolhida para ter, o quanto antes, um app **usável fim-a-fim** (login +
    coluna por botões (mais simples e confiável que arrastar colunas, dado o
    ganho marginal frente à complexidade de contextos `dnd-kit` aninhados).
    Testado ponta a ponta contra o Supabase real.
-6. ⬜ **Dashboard** — por último de propósito: só depois de 2-5 existirem é
-   que há dado real de cada módulo para compor a visão consolidada. Hoje é
-   um placeholder com saudação + cards estáticos.
+6. ✅ **Dashboard** (2026-09-09) — `getDailyOverview()` compõe, via as
+   funções públicas de cada módulo (nenhum select direto em tabela alheia),
+   o dia de treino esperado + se já treinou, refeições/água de hoje,
+   pendências do Kanban (atrasadas ou de hoje) e o saldo parcial do mês.
+   Testado ponta a ponta contra o Supabase real.
 7. ✅ **Deploy em produção** (2026-09-07) — `agenda.vinnisantos.com.br`, ver
    [`07-infraestrutura-deploy.md`](07-infraestrutura-deploy.md). Feito já na
    Fase 1, antes dos módulos restantes, como planejado: validar infra cedo

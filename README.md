@@ -3,10 +3,11 @@
 Sistema pessoal de gestão de rotina de Vinnicius Santos: centraliza estudos, estágio,
 treino, alimentação e finanças em um único painel diário.
 
-> **Status:** em produção em `agenda.vinnisantos.com.br`. Fundação,
-> **Alimentação**, **Treinos**, **Financeiro** e **Estudos e Trabalhos**
-> completos e testados ponta a ponta. Próximo: Dashboard (ver
-> [`docs/08-processo-desenvolvimento.md`](docs/08-processo-desenvolvimento.md#fases-de-implementação)).
+> **Status:** em produção em `agenda.vinnisantos.com.br`. Todos os 5 módulos
+> (**Dashboard**, **Financeiro**, **Treinos**, **Alimentação**, **Estudos e
+> Trabalhos**) completos e testados ponta a ponta — ver
+> [`docs/08-processo-desenvolvimento.md`](docs/08-processo-desenvolvimento.md#fases-de-implementação)
+> para pendências abertas conhecidas (CI de qualidade, automação de deploy).
 
 ## Módulos
 
