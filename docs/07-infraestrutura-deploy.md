@@ -96,6 +96,16 @@ flowchart LR
   ambiente existente) — cuidado redobrado com qualquer comando que afete
   `/etc/nginx` ou containers de outros projetos na mesma máquina.
 
+## Conexão com o banco (pooler)
+
+`DATABASE_URL` **deve** usar o pooler de transação do Supabase (porta
+`6543`), nunca o de sessão (porta `5432`) — o de sessão tem teto de 15
+conexões simultâneas por projeto e já causou uma indisponibilidade real do
+Dashboard quando uma página passou a fazer várias queries em paralelo. Ver
+[ADR-0006](adr/0006-pooler-transacao-em-vez-de-sessao.md) para o incidente
+completo e por que o código (`prepare: false` em `src/lib/db/client.ts`) já
+esperava esse modo.
+
 ## Observabilidade
 
 - Logs do container via `docker compose logs` / `docker logs`.
