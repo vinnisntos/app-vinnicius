@@ -1,7 +1,7 @@
 # Design System
 
 Tokens extraídos diretamente do bundle publicado de **vinnisantos.com.br**
-(CSS compilado, Tailwind v4) para que `agenda.vinnisantos.com.br` seja lido como
+(CSS compilado, Tailwind v4) para que `lifeos.vinnisantos.com.br` seja lido como
 o mesmo produto, não um app à parte. Fonte: `theme-color`/`color-scheme` do
 `<head>` e variáveis `@theme` do CSS de produção do site.
 

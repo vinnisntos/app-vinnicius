@@ -63,5 +63,5 @@ desktop (foco/planejamento) e mobile (registro rápido: bateu água, terminou o 
 - Vinnicius consegue, em menos de 1 minuto pela manhã, saber o que fazer no dia.
 - Todo lançamento (treino, refeição, água, transação, cartão) leva menos de
   3 toques/cliques.
-- Login privado funcionando em `agenda.vinnisantos.com.br` com HTTPS.
+- Login privado funcionando em `lifeos.vinnisantos.com.br` com HTTPS.
 - Nenhum dado sensível acessível sem autenticação (validado por RLS + testes manuais).

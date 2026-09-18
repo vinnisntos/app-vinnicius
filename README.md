@@ -1,9 +1,9 @@
-# agenda.vinnisantos.com.br — Life OS
+# lifeos.vinnisantos.com.br — Life OS
 
 Sistema pessoal de gestão de rotina de Vinnicius Santos: centraliza estudos, estágio,
 treino, alimentação e finanças em um único painel diário.
 
-> **Status:** em produção em `agenda.vinnisantos.com.br`. Todos os 5 módulos
+> **Status:** em produção em `lifeos.vinnisantos.com.br`. Todos os 5 módulos
 > (**Dashboard**, **Financeiro**, **Treinos**, **Alimentação**, **Estudos e
 > Trabalhos**) completos e testados ponta a ponta — ver
 > [`docs/08-processo-desenvolvimento.md`](docs/08-processo-desenvolvimento.md#fases-de-implementação)

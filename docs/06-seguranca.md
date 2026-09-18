@@ -72,7 +72,7 @@ com o mesmo rigor de um app multiusuário.
 ## Transporte e infraestrutura
 
 - TLS obrigatório em produção — nginx + Certbot providenciam o certificado
-  Let's Encrypt para `agenda.vinnisantos.com.br` e forçam redirect HTTP→HTTPS
+  Let's Encrypt para `lifeos.vinnisantos.com.br` e forçam redirect HTTP→HTTPS
   (ver [ADR-0004](adr/0004-nginx-compartilhado-em-vez-de-caddy.md)).
 - Headers de segurança estáticos configurados no Next.js (`next.config.ts`):
   `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`,

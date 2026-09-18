@@ -8,7 +8,7 @@
 
 ```mermaid
 flowchart LR
-    Internet -->|"443/tcp\nagenda.vinnisantos.com.br"| EC2
+    Internet -->|"443/tcp\nlifeos.vinnisantos.com.br"| EC2
     subgraph EC2["EC2 compartilhada (outros projetos também rodam aqui)"]
         direction TB
         Nginx["nginx (já existente)\n:80/:443 públicos, TLS via Certbot\num server{} por domínio"]
@@ -36,7 +36,7 @@ confirme com `ss -tlnp` que continua livre.
 
 ## DNS
 
-- `agenda.vinnisantos.com.br` já resolve para o IP público da instância
+- `lifeos.vinnisantos.com.br` já resolve para o IP público da instância
   (confirmado antes do primeiro deploy) — nenhuma ação de DNS pendente.
 
 ## Container

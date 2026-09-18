@@ -9,7 +9,7 @@ Supabase, Drizzle) permanece válido.
 
 ## Contexto
 Requisito explícito: Postgres via Supabase é obrigatório. Infraestrutura é AWS
-EC2, servindo `agenda.vinnisantos.com.br`. O restante da stack foi deixado em
+EC2, servindo `lifeos.vinnisantos.com.br`. O restante da stack foi deixado em
 aberto ("livre, desde que segura"). O app é de uso pessoal (usuário único),
 guarda dado sensível (saúde, finanças), e precisa ter UI/UX equivalente à de
 vinnisantos.com.br.

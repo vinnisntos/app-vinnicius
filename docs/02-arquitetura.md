@@ -23,7 +23,7 @@ bem dividido em módulos é mais fácil de manter sozinho.
 
 ```mermaid
 flowchart TB
-    subgraph Client["Navegador (agenda.vinnisantos.com.br)"]
+    subgraph Client["Navegador (lifeos.vinnisantos.com.br)"]
         UI["Next.js App Router\nReact Server + Client Components"]
     end
 

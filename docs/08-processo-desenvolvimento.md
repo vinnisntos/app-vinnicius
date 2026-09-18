@@ -87,7 +87,7 @@ Ordem escolhida para ter, o quanto antes, um app **usável fim-a-fim** (login +
    o dia de treino esperado + se já treinou, refeições/água de hoje,
    pendências do Kanban (atrasadas ou de hoje) e o saldo parcial do mês.
    Testado ponta a ponta contra o Supabase real.
-7. ✅ **Deploy em produção** (2026-09-07) — `agenda.vinnisantos.com.br`, ver
+7. ✅ **Deploy em produção** (2026-09-07) — `lifeos.vinnisantos.com.br`, ver
    [`07-infraestrutura-deploy.md`](07-infraestrutura-deploy.md). Feito já na
    Fase 1, antes dos módulos restantes, como planejado: validar infra cedo
    evitou que a superfície de risco crescesse até o fim do projeto.
