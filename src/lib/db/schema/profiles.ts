@@ -9,6 +9,9 @@ export const profiles = pgTable("profiles", {
   fullName: text("full_name"),
   avatarUrl: text("avatar_url"),
   timezone: text("timezone").notNull().default("America/Sao_Paulo"),
+  role: text("role").notNull().default("user"), // 'master' | 'user' — só master altera (trigger)
+  email: text("email"), // cópia de auth.users.email, sincronizada por trigger
+  phone: text("phone"), // só dígitos, catálogo
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),

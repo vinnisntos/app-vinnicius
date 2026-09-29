@@ -26,6 +26,8 @@ export const nutritionProfile = pgTable("nutrition_profile", {
     .notNull()
     .default("2500"),
   waterGoalMl: integer("water_goal_ml").notNull().default(3000),
+  goal: text("goal").notNull().default("emagrecer"), // emagrecer|manter|ganhar
+  targetWeightKg: numeric("target_weight_kg", { precision: 5, scale: 2 }),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
@@ -59,6 +61,15 @@ export const mealLogs = pgTable(
     calories: numeric("calories", { precision: 6, scale: 1 }),
     isCompleted: boolean("is_completed").notNull().default(false),
     completedAt: timestamp("completed_at", { withTimezone: true }),
+    proteinG: numeric("protein_g", { precision: 6, scale: 1 }),
+    carbsG: numeric("carbs_g", { precision: 6, scale: 1 }),
+    fatG: numeric("fat_g", { precision: 6, scale: 1 }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
   },
   (table) => [
     uniqueIndex("meal_logs_user_date_slot_key").on(
