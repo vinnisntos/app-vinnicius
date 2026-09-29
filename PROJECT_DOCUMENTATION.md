@@ -14,8 +14,8 @@ Documentação de base (arquitetura, segurança, deploy) continua em `docs/`.
 | 2 | Auth, trial/paywall, painel master | ✅ concluída |
 | 3 | UI mobile-first (Codex) | ✅ concluída |
 | 4 | Asaas + Google Calendar | ✅ concluída |
-| 5 | Comunidade + FAQ UI (Codex) | pendente |
-| 6 | Revisão final / CI-CD | pendente |
+| 5 | Comunidade + FAQ UI (Codex) | ✅ concluída |
+| 6 | Revisão final / CI-CD | ✅ concluída (deploy pendente de config manual) |
 
 ---
 
@@ -338,3 +338,89 @@ Como a via Drizzle ignora RLS, a regra de visibilidade da policy
 `community_or_owner_select` é reimplementada explicitamente em
 `src/lib/modules/comunidade/repository.ts` (`visibleTo`). Motivo de
 moderação visível só para master e autor.
+
+### UI da Fase 5 (Codex)
+
+Delegada ao mesmo terminal Codex da Fase 3 (`task_44070d0f67dc`);
+relatório em `docs/phase-5-ui-report.md`. Telas: `/comunidade`, `/faq`
+(pública), `/lembretes`, gestão de FAQ no `/admin`, checkout com CPF
+progressivo. Incluiu as correções da revisão da Fase 3 — a mais importante:
+a fila offline de refeições era global no `localStorage` e, num aparelho
+compartilhado, gravaria refeições de uma conta em outra; agora é por
+usuário e itens rejeitados (4xx) são descartados.
+
+---
+
+## Fase 6 — Revisão final e prontidão de CI/CD
+
+### Verificação final (código integrado, branch `feat/saas-foundation`)
+
+| Verificação | Resultado |
+|---|---|
+| `tsc --noEmit` | ✅ sem erros |
+| `eslint src` | ✅ sem erros |
+| Vitest | ✅ 73 testes |
+| `next build` (Next 16.3.4) | ✅ |
+| RLS (PGlite, stub de `auth`) | ✅ 36 asserções |
+| E2E contra Supabase real | ✅ 93 asserções (usuários temporários, limpos ao fim) |
+
+### Variáveis de ambiente
+
+Todas as 12 variáveis lidas pelo código estão documentadas em
+`.env.example`. Integrações degradam com segurança quando ausentes:
+sem Asaas → link fixo + liberação manual; sem Google → UI mostra
+"indisponível"; sem `ASAAS_WEBHOOK_TOKEN` → webhook responde 503.
+
+`NEXT_PUBLIC_*` só é inlinado no build se definido; o build do GitHub
+Actions não tem essas variáveis, então o servidor as lê em runtime. **Não
+use `NEXT_PUBLIC_*` em Client Components** sem passar build args ao
+Docker — hoje nenhum Client Component usa.
+
+### Pipeline
+
+`.github/workflows/build-and-push.yml`: job `verify` (typegen, tsc,
+eslint, vitest) em PR e push na `main`; `build-and-push` só publica a
+imagem no GHCR se `verify` passar. Deploy na EC2 continua manual
+(`docker compose pull && docker compose up -d`, nunca `--build` — ver
+ADR-0005).
+
+### Checklist de deploy (ações humanas)
+
+1. **Promover o master** (senão seu usuário cai no paywall — o trial dele
+   venceu em 10/09):
+   `update public.profiles set role = 'master' where email = '<seu-email>';`
+2. **Supabase → Authentication → URL Configuration:** Site URL
+   `https://lifeos.vinnisantos.com.br`; Redirect URLs com
+   `https://lifeos.vinnisantos.com.br/auth/confirm`.
+3. **`.env.production` na EC2:** adicionar `APP_URL`, `ASAAS_*`,
+   `GOOGLE_*` (ver `.env.example`). Gerar `GOOGLE_TOKEN_ENCRYPTION_KEY`
+   com o comando documentado. **Guardar essa chave**: perdê-la invalida
+   todas as conexões Google.
+4. **Asaas:** criar a conta, gerar a API key (começar em sandbox), cadastrar
+   o webhook `https://lifeos.vinnisantos.com.br/api/webhooks/asaas` com o
+   mesmo token de `ASAAS_WEBHOOK_TOKEN`.
+5. **Google Cloud:** projeto + Calendar API + tela de consentimento +
+   credencial OAuth Web com redirect
+   `https://lifeos.vinnisantos.com.br/api/integrations/google/callback`.
+   Publicar o app (em "Testing" os tokens expiram em 7 dias).
+6. **Merge** `feat/saas-foundation` → `main` (dispara verify + build da
+   imagem) e `docker compose pull && docker compose up -d` na EC2.
+7. **No `/admin`:** configurar WhatsApp de suporte, dias de trial e,
+   opcionalmente, link fixo de checkout; cadastrar perguntas do FAQ.
+
+### Estado do banco de produção
+
+As migrations 0003 e 0004 **já estão aplicadas** no Supabase de produção.
+São aditivas e compatíveis com a versão do app hoje no ar (que fala com o
+banco via Drizzle e não depende das policies alteradas).
+
+### Pendências conhecidas (fora do escopo destas fases)
+
+- `seed_user_defaults` ainda cria colunas de Kanban e categorias do
+  Financeiro para cada novo assinante (módulos legados, só master os vê).
+- O Dashboard `/` ainda usa os cards legados (treino/nutrição via Server
+  Actions); não foi redesenhado.
+- Webhook do Asaas não ordena eventos fora de ordem por `dateCreated`
+  (o Asaas entrega em ordem na prática; `revoked` é sempre preservado).
+- Tracking de peptídeos, citado no briefing de contexto, não fazia parte
+  das fases definidas e não foi modelado.
