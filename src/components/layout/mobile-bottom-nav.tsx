@@ -13,7 +13,7 @@ import { NAV_ITEMS, type NavItem } from "./nav-items";
 
 function NavLink({ item, active }: { item: NavItem; active: boolean }) {
   return (
-    <Link href={item.href} aria-current={active ? "page" : undefined} className={cn("flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-brand-500", active ? "bg-brand-500/15 text-brand-400" : "text-zinc-400 active:bg-white/10")}>
+    <Link href={item.href} aria-current={active ? "page" : undefined} className={cn("flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-xs font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-brand-500", active ? "bg-brand-500/15 text-brand-400" : "text-zinc-300 active:bg-white/10")}>
       <item.icon className="size-5" aria-hidden />
       <span className="max-w-full truncate">{item.label}</span>
     </Link>
@@ -35,7 +35,7 @@ export function MobileBottomNav() {
       <nav aria-label="Navegação principal" className="fixed inset-x-3 bottom-3 z-40 flex rounded-2xl border border-white/10 bg-zinc-950/80 p-1.5 shadow-2xl backdrop-blur-xl md:hidden" style={{ paddingBottom: "max(0.375rem, env(safe-area-inset-bottom))" }}>
         {visible.map((item) => <NavLink key={item.href} item={item} active={isActive(item.href)} />)}
         {overflow.length ? (
-          <button type="button" onClick={() => setMoreOpen(true)} aria-label="Abrir mais opções" className={cn("flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-brand-500", overflowActive ? "bg-brand-500/15 text-brand-400" : "text-zinc-400")}>
+          <button type="button" onClick={() => setMoreOpen(true)} aria-label="Abrir mais opções" className={cn("flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-brand-500", overflowActive ? "bg-brand-500/15 text-brand-400" : "text-zinc-300")}>
             <Ellipsis className="size-5" aria-hidden /><span>Mais</span>
           </button>
         ) : null}
@@ -51,7 +51,7 @@ export function MobileBottomNav() {
               </Link>
             ))}
           </nav>
-          <form action={signOut} className="mt-3"><Button variant="ghost" className="h-12 w-full justify-start gap-3 text-zinc-400"><LogOut aria-hidden /> Sair</Button></form>
+          <form action={signOut} className="mt-3"><Button variant="ghost" className="h-12 w-full justify-start gap-3 text-zinc-300"><LogOut aria-hidden /> Sair</Button></form>
         </SheetContent>
       </Sheet>
     </>

@@ -25,6 +25,13 @@ distinguem.
 | `/alimentacao` | As ações frequentes (água, marcar refeição) ficam **no meio da rolagem**: primeiro header + seletor de data, depois o anel de 160 px, só então água e refeições. Não há ação fixa na parte de baixo. | `nutrition-dashboard.tsx:123–157` |
 | `/alimentacao` | O seletor de data (ação secundária) ocupa o topo com 3 controles; a ação primária do dia não tem lugar fixo. | `nutrition-dashboard.tsx:125–131` |
 
+**Evidência medida (Chrome headless 390×844, usuário real logado):** em
+`/alimentacao` os chips de água (+200/+300/+500) ficam **atrás da bottom
+nav**, a ação mais frequente do app só é alcançável rolando; o título
+"Seu dia em equilíbrio" ocupa 1/3 da tela e empurra tudo para baixo; o
+seletor de data fica cortado ("29/09/202"); nenhum elemento de ação
+primária existe no terço inferior.
+
 **Regra para a refatoração:** toda tela com ação primária recorrente tem
 uma barra de ação fixa ou um FAB acima da bottom nav
 (`bottom: calc(nav + safe-area)`). O topo fica só para título,

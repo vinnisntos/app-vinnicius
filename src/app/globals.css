@@ -23,6 +23,7 @@
   --color-brand-600: var(--brand-600);
   --color-brand-900: var(--brand-900);
   --color-success-500: var(--success-500);
+  --color-warning-500: var(--warning-500);
   --color-danger-500: var(--danger-500);
 
   --color-sidebar-ring: var(--sidebar-ring);
@@ -78,8 +79,9 @@
   --brand-600: #9333ea;
   --brand-900: #3b0764;
 
-  --success-500: oklch(72.3% 0.219 149.579);
-  --danger-500: oklch(63.7% 0.237 25.331);
+  --success-500: #34d399;
+  --warning-500: #fbbf24;
+  --danger-500: #fb7185;
 
   /* Superfícies "vidro": tinta translúcida sobre o --background, nunca cor sólida */
   --card: rgb(255 255 255 / 0.05);
