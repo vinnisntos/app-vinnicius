@@ -5,6 +5,7 @@ import { MEAL_SLOTS, type NutritionDay, type NutritionMetrics } from "@/types/da
 import * as repository from "./api-repository";
 import {
   calculateBMR,
+  calculateMacroTargets,
   calculateRecommendedCalories,
   calculateTDEE,
   type ActivityLevel,
@@ -34,9 +35,10 @@ export async function getNutritionDay(userId: string, date: string): Promise<Nut
   const bySlot = new Map(mealRows.map((m) => [m.meal_slot, m]));
   const waterRows = water.map(toWaterLogRow);
   const waterTotal = waterRows.reduce((sum, w) => sum + w.amount_ml, 0);
-  const consumed = mealRows
-    .filter((m) => m.is_completed && m.calories != null)
-    .reduce((sum, m) => sum + (m.calories ?? 0), 0);
+  const completed = mealRows.filter((m) => m.is_completed);
+  const sumOf = (key: "calories" | "protein_g" | "carbs_g" | "fat_g") =>
+    completed.reduce((sum, m) => sum + (m[key] ?? 0), 0);
+  const consumed = sumOf("calories");
 
   let metrics: NutritionMetrics | null = null;
   if (profile && latestWeight) {
@@ -49,7 +51,13 @@ export async function getNutritionDay(userId: string, date: string): Promise<Nut
       today: date,
     });
     const tdee = calculateTDEE(bmr, profile.activityLevel as ActivityLevel);
-    const recommended = calculateRecommendedCalories({ tdee, goal: profile.goal as NutritionGoal, sex });
+    const goal = profile.goal as NutritionGoal;
+    const recommended = calculateRecommendedCalories({ tdee, goal, sex });
+    const macros = calculateMacroTargets({
+      kcal: recommended,
+      weightKg: Number(latestWeight.weightKg),
+      goal,
+    });
 
     metrics = {
       bmr_kcal: Math.round(bmr),
@@ -58,6 +66,12 @@ export async function getNutritionDay(userId: string, date: string): Promise<Nut
       consumed_kcal: Math.round(consumed),
       // Negativo = passou da meta (o front mostra como excedente).
       remaining_kcal: Math.round(recommended - consumed),
+      protein_target_g: macros.protein_g,
+      carbs_target_g: macros.carbs_g,
+      fat_target_g: macros.fat_g,
+      protein_g: Math.round(sumOf("protein_g")),
+      carbs_g: Math.round(sumOf("carbs_g")),
+      fat_g: Math.round(sumOf("fat_g")),
       water_total_ml: waterTotal,
       water_goal_ml: profile.waterGoalMl,
     };

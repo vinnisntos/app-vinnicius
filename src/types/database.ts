@@ -216,6 +216,14 @@ export interface NutritionMetrics {
   recommended_kcal: number; // TDEE ajustado por `goal`
   consumed_kcal: number;
   remaining_kcal: number;
+  /** Metas de macros derivadas da meta calórica (proteína por kg de peso). */
+  protein_target_g: number;
+  carbs_target_g: number;
+  fat_target_g: number;
+  /** Consumido = soma das refeições concluídas do dia. */
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
   water_total_ml: number;
   water_goal_ml: number;
 }
@@ -355,6 +363,34 @@ export interface NutritionDay {
   water_logs: WaterLogRow[];
   /** null enquanto não houver perfil nutricional + ao menos uma pesagem. */
   metrics: NutritionMetrics | null;
+}
+
+/** Próxima ação sugerida no Dashboard (regra em lib/modules/dashboard/next-action.ts). */
+export type NextAction =
+  | { kind: "setup_profile" }
+  | { kind: "log_meal"; meal_slot: MealSlot; overdue: boolean }
+  | { kind: "drink_water"; suggested_ml: number; behind_ml: number }
+  | { kind: "log_weight" }
+  | { kind: "all_done" };
+
+export interface NextReminder {
+  kind: ReminderKind;
+  title: string;
+  date: IsoDate;
+  time: string; // "HH:MM" no fuso do usuário
+}
+
+/**
+ * GET /api/dashboard/summary — responde, sem rolar, "quanto me resta" e
+ * "o que faço agora".
+ */
+export interface DashboardSummary {
+  date: IsoDate;
+  now_time: string; // "HH:MM" no fuso do usuário
+  first_name: string | null;
+  metrics: NutritionMetrics | null;
+  next_action: NextAction;
+  next_reminder: NextReminder | null;
 }
 
 /** GET /api/community/feed?cursor= */

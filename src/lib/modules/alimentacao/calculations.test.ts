@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calculateBMR,
   calculateDeficit,
+  calculateMacroTargets,
   calculateRecommendedCalories,
   calculateTDEE,
 } from "./calculations";
@@ -82,5 +83,24 @@ describe("calculateRecommendedCalories", () => {
   it("nunca abaixo do piso de segurança", () => {
     expect(calculateRecommendedCalories({ tdee: 1400, goal: "emagrecer", sex: "F" })).toBe(1200);
     expect(calculateRecommendedCalories({ tdee: 1700, goal: "emagrecer", sex: "M" })).toBe(1500);
+  });
+});
+
+describe("calculateMacroTargets", () => {
+  it("emagrecer: 1,8 g/kg de proteína, 25% gordura, carbo no restante", () => {
+    // 70 kg → P 126 g (504 kcal); G 1560*0,25/9 = 43 g (387 kcal); C (1560-504-387)/4 = 167 g
+    expect(calculateMacroTargets({ kcal: 1560, weightKg: 70, goal: "emagrecer" })).toEqual({
+      protein_g: 126,
+      fat_g: 43,
+      carbs_g: 167,
+    });
+  });
+
+  it("manter usa 1,6 g/kg", () => {
+    expect(calculateMacroTargets({ kcal: 2000, weightKg: 80, goal: "manter" }).protein_g).toBe(128);
+  });
+
+  it("carboidrato nunca fica negativo", () => {
+    expect(calculateMacroTargets({ kcal: 1200, weightKg: 150, goal: "emagrecer" }).carbs_g).toBe(0);
   });
 });

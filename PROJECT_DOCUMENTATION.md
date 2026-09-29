@@ -16,6 +16,7 @@ Documentação de base (arquitetura, segurança, deploy) continua em `docs/`.
 | 4 | Asaas + Google Calendar | ✅ concluída |
 | 5 | Comunidade + FAQ UI (Codex) | ✅ concluída |
 | 6 | Revisão final / CI-CD | ✅ concluída (deploy pendente de config manual) |
+| 7 | Refatoração de UX (zona do polegar, entrada sem digitação, cor) | em andamento |
 
 ---
 
@@ -424,3 +425,18 @@ banco via Drizzle e não depende das policies alteradas).
   (o Asaas entrega em ordem na prática; `revoked` é sempre preservado).
 - Tracking de peptídeos, citado no briefing de contexto, não fazia parte
   das fases definidas e não foi modelado.
+
+---
+
+## Fase 7 — Refatoração de UX
+
+Auditoria heurística: `docs/ux-audit-phase7.md` (zona do polegar, esforço
+de entrada, cor/contraste/carga cognitiva, com arquivo:linha).
+
+### Backend adicionado para a UX
+
+| Mudança | Detalhe |
+|---|---|
+| `NutritionMetrics` + macros | `protein/carbs/fat_target_g` e consumido do dia. Proteína 1,8 g/kg (emagrecer/ganhar) ou 1,6 g/kg (manter); gordura 25% da meta; carbo = restante, nunca negativo. |
+| `GET /api/dashboard/summary` | `DashboardSummary`: métricas + `next_action` + `next_reminder` no fuso do usuário. |
+| `next_action` (`lib/modules/dashboard/next-action.ts`, puro) | Perfil → refeição da janela atual → refeição atrasada (exceto ceia) → água atrás do ritmo 07–22h (sugere 250/500 ml) → pesagem com 7+ dias → tudo em dia. |

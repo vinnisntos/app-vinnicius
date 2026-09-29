@@ -114,3 +114,29 @@ export function calculateRecommendedCalories(input: {
   const floored = Math.max(target, MIN_SAFE_KCAL[input.sex]);
   return Math.round(floored / 10) * 10;
 }
+
+/** Proteína por kg de peso corporal, conforme o objetivo. */
+const PROTEIN_G_PER_KG: Record<NutritionGoal, number> = {
+  emagrecer: 1.8, // preserva massa magra em déficit
+  manter: 1.6,
+  ganhar: 1.8,
+};
+const FAT_SHARE = 0.25; // 25% das calorias
+
+export type MacroTargets = { protein_g: number; carbs_g: number; fat_g: number };
+
+/**
+ * Metas diárias de macros a partir da meta calórica: proteína por kg,
+ * gordura = 25% das kcal, carboidrato = o que sobra (nunca negativo).
+ * Gramas inteiros — é o que o usuário consegue acompanhar.
+ */
+export function calculateMacroTargets(input: {
+  kcal: number;
+  weightKg: number;
+  goal: NutritionGoal;
+}): MacroTargets {
+  const protein = Math.round(input.weightKg * PROTEIN_G_PER_KG[input.goal]);
+  const fat = Math.round((input.kcal * FAT_SHARE) / 9);
+  const carbs = Math.max(0, Math.round((input.kcal - protein * 4 - fat * 9) / 4));
+  return { protein_g: protein, carbs_g: carbs, fat_g: fat };
+}
