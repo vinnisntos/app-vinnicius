@@ -14,7 +14,19 @@ const nextConfig: NextConfig = {
   // Build enxuto para produção (Dockerfile copia só .next/standalone + static).
   output: "standalone",
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      {
+        // SW nunca pode ficar preso em cache HTTP — senão o usuário roda a
+        // versão antiga indefinidamente.
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
+    ];
   },
 };
 

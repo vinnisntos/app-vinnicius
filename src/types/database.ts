@@ -284,24 +284,130 @@ export interface HelpTooltipRow {
 export type HelpTooltipMap = Record<HelpKey, Pick<HelpTooltipRow, "title" | "body" | "faq_item_id">>;
 
 // =========================================================================
+// Integrações (0004)
+// =========================================================================
+
+export const REMINDER_KINDS = ["treino", "refeicoes", "agua", "pesagem"] as const;
+export type ReminderKind = (typeof REMINDER_KINDS)[number];
+
+export interface CalendarReminderRow {
+  id: Uuid;
+  user_id: Uuid;
+  kind: ReminderKind; // único por usuário
+  title: string;
+  days_of_week: number[]; // 0 = domingo … 6 = sábado
+  local_time: string; // "HH:MM" no `timezone`
+  duration_minutes: number;
+  timezone: string;
+  google_event_id: string | null;
+  is_active: boolean;
+  synced_at: IsoTimestamp | null;
+  last_sync_error: string | null;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+}
+
+export type CalendarReminderUpsert = Pick<
+  CalendarReminderRow,
+  "title" | "days_of_week" | "local_time"
+> &
+  Partial<Pick<CalendarReminderRow, "duration_minutes" | "is_active">>;
+
+/** GET /api/integrations/google — token nunca sai do servidor. */
+export interface GoogleCalendarStatus {
+  connected: boolean;
+  google_email: string | null;
+  connected_at: IsoTimestamp | null;
+  /** false quando GOOGLE_CLIENT_ID/SECRET não estão configurados no server. */
+  available: boolean;
+}
+
+// =========================================================================
+// Payloads compostos das rotas
+// =========================================================================
+
+/** GET /api/settings — seguro sem login. */
+export interface PublicSettings {
+  trial_days: number;
+  /** https://wa.me/<numero>?text=<mensagem> — fallback de suporte humano. */
+  support_whatsapp_url: string | null;
+}
+
+/** GET /api/me */
+export interface MeResponse {
+  profile: ProfileRow;
+  subscription: SubscriptionRow | null;
+}
+
+/** GET /api/nutrition/day?date=YYYY-MM-DD */
+export interface NutritionDay {
+  date: IsoDate;
+  profile: NutritionProfileRow | null;
+  latest_weight: WeightLogRow | null;
+  /** Sempre os 5 slots, na ordem de MEAL_SLOTS; `meal` null = ainda não registrado. */
+  meals: { meal_slot: MealSlot; meal: MealLogRow | null }[];
+  water_logs: WaterLogRow[];
+  /** null enquanto não houver perfil nutricional + ao menos uma pesagem. */
+  metrics: NutritionMetrics | null;
+}
+
+/** GET /api/community/feed?cursor= */
+export interface FeedPage {
+  items: FeedPost[];
+  /** Passar em ?cursor= para a próxima página; null = fim. */
+  next_cursor: string | null;
+}
+
+/** Linha do painel master (GET /api/admin/subscriptions). */
+export interface AdminSubscriptionItem {
+  profile: Pick<ProfileRow, "id" | "full_name" | "email" | "phone" | "role" | "created_at">;
+  subscription: SubscriptionRow | null;
+  access_state: AccessState;
+}
+
+export type AdminSubscriptionAction =
+  | { action: "approve"; admin_notes?: string }
+  | { action: "revoke"; admin_notes?: string }
+  | { action: "extend_trial"; days: number; admin_notes?: string }
+  | { action: "set_notes"; admin_notes: string };
+
+/** POST /api/billing/checkout */
+export interface CheckoutResponse {
+  /** Página de pagamento do Asaas (Pix/boleto/cartão) — abrir em nova aba. */
+  checkout_url: string;
+}
+
+// =========================================================================
 // Envelope padrão das rotas de API
 // =========================================================================
 
 /**
- * Toda rota autenticada devolve `access` (paywall/nag) e os tooltips das
- * chaves que a tela usa — o front não precisa de request extra para ajuda.
+ * Envelope de toda rota de `/api` (ver src/lib/api/handler.ts): `access`
+ * (paywall/nag) vem em toda resposta autenticada — null só em rota pública
+ * sem sessão — e `help` traz os tooltips das chaves que a tela usa, sem
+ * request extra.
  */
 export interface ApiEnvelope<T> {
   data: T;
-  access: AccessStatus;
+  access: AccessStatus | null;
   help?: Partial<HelpTooltipMap>;
 }
 
+export type ApiErrorCode =
+  | "unauthorized" // 401 — sem sessão
+  | "paywall" // 402 — trial expirado/revogado
+  | "forbidden" // 403 — não é master / não é dono
+  | "not_found" // 404
+  | "conflict" // 409
+  | "validation" // 400/422 — `fields` traz erros por campo
+  | "upstream" // 502 — Asaas/Google falharam
+  | "internal"; // 500
+
 export interface ApiError {
   error: {
-    code: "unauthorized" | "forbidden" | "paywall" | "validation" | "not_found" | "internal";
+    code: ApiErrorCode;
     message: string;
-    fields?: Record<string, string[]>; // erros de validação Zod
+    fields?: Record<string, string[]>;
   };
 }
 
@@ -321,6 +427,7 @@ export interface PublicTables {
   post_reactions: PostReactionRow;
   faq_items: FaqItemRow;
   help_tooltips: HelpTooltipRow;
+  calendar_reminders: CalendarReminderRow;
 }
 
 export type TableName = keyof PublicTables;

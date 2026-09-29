@@ -7,3 +7,4 @@ export * from "./kanban";
 export * from "./subscriptions";
 export * from "./community";
 export * from "./content";
+export * from "./integrations";

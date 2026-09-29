@@ -1,7 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login"];
+/** Telas de quem ainda não entrou — usuário logado é mandado para "/". */
+const AUTH_PAGES = ["/login", "/cadastro", "/esqueci-senha"];
+
+/** Acessíveis com ou sem sessão. */
+const OPEN_PATHS = ["/auth/", "/faq", "/offline"];
+
+const startsWithAny = (pathname: string, prefixes: string[]) =>
+  prefixes.some((prefix) => pathname === prefix || pathname.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`));
 
 /**
  * Atualiza a sessão Supabase a cada request e bloqueia rotas privadas para
@@ -50,9 +57,16 @@ export async function updateSession(
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublicPath = PUBLIC_PATHS.some((path) =>
-    request.nextUrl.pathname.startsWith(path),
-  );
+  const { pathname } = request.nextUrl;
+
+  // Route Handlers decidem sozinhos (apiRoute devolve 401/402/403 em JSON;
+  // webhooks não têm sessão). Redirecionar para /login quebraria o fetch.
+  if (pathname.startsWith("/api/")) {
+    return supabaseResponse;
+  }
+
+  const isAuthPage = startsWithAny(pathname, AUTH_PAGES);
+  const isPublicPath = isAuthPage || startsWithAny(pathname, OPEN_PATHS);
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();
@@ -60,7 +74,7 @@ export async function updateSession(
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicPath) {
+  if (user && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
