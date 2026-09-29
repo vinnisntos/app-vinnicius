@@ -16,7 +16,9 @@ Documentação de base (arquitetura, segurança, deploy) continua em `docs/`.
 | 4 | Asaas + Google Calendar | ✅ concluída |
 | 5 | Comunidade + FAQ UI (Codex) | ✅ concluída |
 | 6 | Revisão final / CI-CD | ✅ concluída (deploy pendente de config manual) |
-| 7 | Refatoração de UX (zona do polegar, entrada sem digitação, cor) | em andamento |
+| 7 | Refatoração de UX (zona do polegar, entrada sem digitação, cor) | ✅ handoff 1 · 🔄 demais |
+| 8 | Núcleo do produto: medicação, progresso, alimentos, treinos prontos, dicas (backend) | ✅ concluída |
+| 9 | UI da Fase 8 (Codex) | em andamento |
 
 ---
 
@@ -440,3 +442,72 @@ de entrada, cor/contraste/carga cognitiva, com arquivo:linha).
 | `NutritionMetrics` + macros | `protein/carbs/fat_target_g` e consumido do dia. Proteína 1,8 g/kg (emagrecer/ganhar) ou 1,6 g/kg (manter); gordura 25% da meta; carbo = restante, nunca negativo. |
 | `GET /api/dashboard/summary` | `DashboardSummary`: métricas + `next_action` + `next_reminder` no fuso do usuário. |
 | `next_action` (`lib/modules/dashboard/next-action.ts`, puro) | Perfil → refeição da janela atual → refeição atrasada (exceto ceia) → água atrás do ritmo 07–22h (sugere 250/500 ml) → pesagem com 7+ dias → tudo em dia. |
+
+---
+
+## Fase 8 — Núcleo do produto (medicação, progresso, alimentos, treinos, dicas)
+
+Escopo definido pelo dono do produto em `docs/escopo-produto.md` (fonte de
+verdade). Regra de segurança não negociável: **o app registra a prescrição
+médica; nunca sugere, calcula ou ajusta dose.**
+
+### Migrations
+
+| Migration | Conteúdo |
+|---|---|
+| `0005_health_hub.sql` | `medications`, `medication_logs`, `body_measurements`, `foods`, `meal_log_items` (trigger de totais), `workout_programs`, `program_workouts`, `program_exercises`, `program_enrollments` (1 ativa), `program_workout_logs`, `tips`; lembrete `medicacao` |
+| `0006_seed_content.sql` | 70 alimentos (TACO aprox.), 6 programas / 37 treinos / 155 exercícios, 23 FAQ, 8 dicas, 12 tooltips — idempotente |
+| `0007_fix_meal_totals_trigger_privileges.sql` | trigger de totais `SECURITY DEFINER`: sem isso, excluir pelo Supabase Auth um usuário com alimentos falhava (500) — reproduzido e verificado no Supabase real |
+
+RLS: tabelas do usuário = dono + master; filhos (`medication_logs`,
+`meal_log_items`, `program_workout_logs`) exigem posse do pai; catálogos
+(`foods`, programas, `tips`) só publicados e só para autenticados.
+Lição registrada: o PGlite roda como superusuário e **não** reproduz bugs de
+privilégio entre papéis — esses exigem teste no Supabase real.
+
+### Rotas (todas `guard: "access"`, exceto admin)
+
+| Método | Rota | Contrato |
+|---|---|---|
+| GET | `/api/foods?q=&category=` | `FoodSearchResponse` (até 40; `%`/`_` escapados) |
+| GET | `/api/foods/recent` | `FoodSearchResponse` (últimos do usuário) |
+| POST | `/api/nutrition/meal-items` | `MealItemAdd` → `{ meal, items }` (conclui a refeição; idempotente) |
+| DELETE | `/api/nutrition/meal-items/:id` | `{ meal, items }` com totais recalculados |
+| GET/POST | `/api/medications` | `MedicationsResponse` / `MedicationUpsert` → 201 |
+| PATCH/DELETE | `/api/medications/:id` | parcial / apaga com histórico |
+| POST | `/api/medications/:id/logs` | `MedicationLogInsert` (201; 200 em retry; sem dose = prescrita) |
+| DELETE | `/api/medications/logs/:logId` | desfaz registro |
+| GET | `/api/progress?days=` | `ProgressResponse` (séries, variação, constância 30 d) |
+| PUT | `/api/progress/measurements` | `BodyMeasurementUpsert` (não apaga campos ausentes) |
+| GET | `/api/training/programs?goal=&level=&location=` | `WorkoutProgramRow[]` |
+| GET | `/api/training/programs/:slug` | `ProgramDetail` |
+| POST/DELETE | `/api/training/enrollment` | entra (encerra o ativo) / sai → `TrainingToday` |
+| GET | `/api/training/today` | `TrainingToday` |
+| POST | `/api/training/logs` | `ProgramWorkoutLogInsert` → `TrainingToday` avançado; 409 se treino de outro programa |
+| GET | `/api/tips?category=` | `TipRow[]` |
+| POST/PATCH/DELETE | `/api/admin/tips[/:id]` | master |
+
+### Regras de negócio (puras e testadas)
+
+- **Agenda de medicação** (`medicacao/schedule.ts`): diária · semanal
+  (dias marcados) · quinzenal (dia marcado + 13 dias desde a última) ·
+  personalizada. `next_due_date` a partir de hoje.
+- **Rodízio de local**: segue a ordem abdômen → coxa → braço (esq/dir),
+  evitando os 2 últimos locais. Sugere **local**, nunca dose.
+- **Alerta**: `severe_recently` = efeito com intensidade "forte" nos
+  últimos 7 dias → UI orienta procurar o médico (sem triagem).
+- **Próximo treino** (`treinos/sequence.ts`): pela sequência, não pelo
+  calendário. Rotina cicla (A→B→C→A); progressão linear (corrida 5K)
+  avança até concluir.
+- **Próxima ação do Dashboard**: dia de aplicação tem prioridade máxima
+  (antes até de configurar o perfil) → perfil → refeição da janela →
+  refeição atrasada → água atrás do ritmo → pesagem semanal → tudo em dia.
+- **Dica do dia**: rotação determinística pelo dia do ano.
+
+### Verificação
+
+108 testes unitários; 52 asserções de RLS (PGlite); seed validado duas
+vezes (idempotência) e checagem nutricional (kcal ≈ 4P + 4C + 9G — só a
+cerveja diverge, pelo álcool, como esperado); 46 asserções E2E contra o
+Supabase real (inclusive paywall 402 em todos os módulos novos e limpeza
+completa dos usuários de teste).
