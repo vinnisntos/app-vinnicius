@@ -15,6 +15,7 @@ const CONFIG: Record<ReminderKind, { title: string; description: string }> = {
   refeicoes: { title: "Registrar refeições", description: "Não deixe as refeições passarem sem registro." },
   agua: { title: "Beber água", description: "Uma pausa simples para cuidar da hidratação." },
   pesagem: { title: "Pesagem", description: "Acompanhe a tendência, sem pressão diária." },
+  medicacao: { title: "Aplicação da medicação", description: "Lembrete no dia da dose prescrita pelo seu médico." },
 };
 const DAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
