@@ -25,4 +25,5 @@ export const REMINDER_PATHS: Record<ReminderKind, string> = {
   refeicoes: "/alimentacao",
   agua: "/alimentacao",
   pesagem: "/alimentacao",
+  medicacao: "/saude",
 };

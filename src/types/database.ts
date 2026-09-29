@@ -295,7 +295,7 @@ export type HelpTooltipMap = Record<HelpKey, Pick<HelpTooltipRow, "title" | "bod
 // Integrações (0004)
 // =========================================================================
 
-export const REMINDER_KINDS = ["treino", "refeicoes", "agua", "pesagem"] as const;
+export const REMINDER_KINDS = ["treino", "refeicoes", "agua", "pesagem", "medicacao"] as const;
 export type ReminderKind = (typeof REMINDER_KINDS)[number];
 
 export interface CalendarReminderRow {
