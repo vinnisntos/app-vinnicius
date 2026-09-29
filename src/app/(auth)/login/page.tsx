@@ -1,38 +1,21 @@
 import type { Metadata } from "next";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import Link from "next/link";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Entrar" };
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: PageProps<"/login">) {
+  const params = await searchParams;
+  const invalidLink = params.erro === "link_invalido";
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[size:40px_40px] opacity-[0.15] [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-brand-600 via-brand-500/30 to-transparent blur-[120px]"
-      />
-
-      <div className="relative z-10 w-full max-w-sm">
-        <p className="mb-8 text-center text-xs font-semibold tracking-widest text-gray-400 uppercase">
-          Life OS · Vinnicius Santos
-        </p>
-
-        <Card className="border-white/10 bg-white/5 backdrop-blur-xl">
-          <CardHeader>
-            <h1 className="text-2xl font-bold tracking-tighter">Entrar</h1>
-            <p className="text-sm text-muted-foreground">
-              Acesso privado — só você.
-            </p>
-          </CardHeader>
-          <CardContent>
-            <LoginForm />
-          </CardContent>
-        </Card>
+    <AuthShell eyebrow="Sua rotina, no seu ritmo" title="Que bom ter você de volta" description="Entre para acompanhar alimentação, hidratação, treinos e evolução em um só lugar.">
+      {invalidLink ? <p role="alert" className="mb-5 rounded-xl border border-amber-400/20 bg-amber-500/10 p-3 text-sm text-amber-100">Este link é inválido ou expirou. Solicite um novo link de recuperação.</p> : null}
+      <LoginForm />
+      <div className="mt-6 flex flex-col items-center gap-3 text-sm text-zinc-400">
+        <Link href="/esqueci-senha" className="min-h-11 content-center text-brand-300 underline-offset-4 hover:underline">Esqueci minha senha</Link>
+        <p>Primeira vez? <Link href="/cadastro" className="text-white underline underline-offset-4">Criar conta grátis</Link></p>
       </div>
-    </main>
+    </AuthShell>
   );
 }
