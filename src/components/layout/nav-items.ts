@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Apple,
+  BellRing,
   CircleHelp,
   Dumbbell,
   LayoutDashboard,
@@ -22,6 +23,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/alimentacao", label: "Alimentação", icon: Apple },
   { href: "/treinos", label: "Treinos", icon: Dumbbell },
+  { href: "/lembretes", label: "Lembretes", icon: BellRing },
   { href: "/comunidade", label: "Comunidade", icon: Users },
   { href: "/faq", label: "Ajuda", icon: CircleHelp },
   { href: "/admin", label: "Admin", icon: ShieldCheck, masterOnly: true },

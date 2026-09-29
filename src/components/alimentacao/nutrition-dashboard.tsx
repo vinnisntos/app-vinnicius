@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Apple, CalendarDays, Check, ChevronLeft, ChevronRight, LoaderCircle, Pencil, RefreshCw, Scale, Utensils } from "lucide-react";
+import Link from "next/link";
+import { Apple, CalendarDays, Check, ChevronLeft, ChevronRight, LoaderCircle, Pencil, RefreshCw, Scale, Share2, Utensils } from "lucide-react";
 import { WaterTracker } from "@/components/alimentacao/water-tracker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,7 +16,7 @@ import { ApiClientError, apiData, apiFetch, newClientId } from "@/lib/api/client
 import { getTodayIsoDate } from "@/lib/date";
 import type { ActivityLevel, HelpTooltipMap, MealLogRow, MealLogUpsert, MealSlot, NutritionDay, NutritionGoal, Sex, WeightLogRow } from "@/types/database";
 
-const QUEUE_KEY = "lifeos.nutrition.mealQueue";
+const QUEUE_KEY_PREFIX = "lifeos.nutrition.mealQueue";
 const MEAL_LABELS: Record<MealSlot, string> = { cafe_da_manha: "Café da manhã", almoco: "Almoço", lanche: "Lanche", jantar: "Jantar", ceia: "Ceia" };
 const ACTIVITY_LABELS: Record<ActivityLevel, string> = { sedentario: "Sedentário", leve: "Levemente ativo", moderado: "Moderadamente ativo", ativo: "Ativo", muito_ativo: "Muito ativo" };
 const GOAL_LABELS: Record<NutritionGoal, string> = { emagrecer: "Emagrecer", manter: "Manter peso", ganhar: "Ganhar peso" };
@@ -30,18 +31,19 @@ function networkFailure(error: unknown) {
   return !navigator.onLine || !(error instanceof ApiClientError);
 }
 
-function readQueue(): MealLogUpsert[] {
+function readQueue(queueKey: string): MealLogUpsert[] {
   try {
-    const parsed = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? "[]") as unknown;
+    const parsed = JSON.parse(localStorage.getItem(queueKey) ?? "[]") as unknown;
     return Array.isArray(parsed) ? parsed as MealLogUpsert[] : [];
   } catch { return []; }
 }
 
-function writeQueue(items: MealLogUpsert[]) {
-  try { localStorage.setItem(QUEUE_KEY, JSON.stringify(items)); } catch { /* armazenamento indisponível */ }
+function writeQueue(queueKey: string, items: MealLogUpsert[]) {
+  try { localStorage.setItem(queueKey, JSON.stringify(items)); } catch { /* armazenamento indisponível */ }
 }
 
-export function NutritionDashboard() {
+export function NutritionDashboard({ userId }: { userId: string }) {
+  const queueKey = `${QUEUE_KEY_PREFIX}:${userId}`;
   const today = getTodayIsoDate();
   const [date, setDate] = useState(today);
   const [day, setDay] = useState<NutritionDay>();
@@ -64,17 +66,34 @@ export function NutritionDashboard() {
   useEffect(() => { const id = setTimeout(() => void load(), 0); return () => clearTimeout(id); }, [load]);
   useEffect(() => {
     async function flushQueue() {
-      const queue = readQueue();
+      const queue = readQueue(queueKey);
       if (!queue.length) return;
-      try {
-        for (let index = 0; index < queue.length; index += 20) await apiData<MealLogRow[]>("/api/nutrition/meals", { method: "PUT", json: queue.slice(index, index + 20) });
-        writeQueue([]); setToast("Alterações offline sincronizadas."); void load();
-      } catch { /* tenta novamente no próximo evento online */ }
+      const remaining: MealLogUpsert[] = [];
+      let discarded = 0;
+      let synced = 0;
+      for (let index = 0; index < queue.length; index += 20) {
+        const batch = queue.slice(index, index + 20);
+        try {
+          await apiData<MealLogRow[]>("/api/nutrition/meals", { method: "PUT", json: batch });
+          synced += batch.length;
+        } catch (cause) {
+          if (cause instanceof ApiClientError && cause.status >= 400 && cause.status < 500) {
+            discarded += batch.length;
+          } else {
+            remaining.push(...queue.slice(index));
+            break;
+          }
+        }
+      }
+      writeQueue(queueKey, remaining);
+      if (discarded) setToast(`${discarded} ${discarded === 1 ? "alteração offline não pôde" : "alterações offline não puderam"} ser salvas`);
+      else if (synced) setToast("Alterações offline sincronizadas.");
+      if (synced) void load();
     }
     window.addEventListener("online", flushQueue);
     if (navigator.onLine) void flushQueue();
     return () => window.removeEventListener("online", flushQueue);
-  }, [load]);
+  }, [load, queueKey]);
   useEffect(() => { if (!toast) return; const id = setTimeout(() => setToast(undefined), 3500); return () => clearTimeout(id); }, [toast]);
 
   function mealPayload(slot: MealSlot, meal: MealLogRow | null, patch: Partial<MealLogUpsert>): MealLogUpsert {
@@ -108,8 +127,8 @@ export function NutritionDashboard() {
       if (saved) setDay((current) => current ? { ...current, meals: current.meals.map((item) => item.meal_slot === payload.meal_slot ? { ...item, meal: saved } : item) } : current);
     } catch (cause) {
       if (networkFailure(cause)) {
-        const queue = readQueue().filter((item) => !(item.log_date === payload.log_date && item.meal_slot === payload.meal_slot));
-        writeQueue([...queue, payload]); setToast("Sem internet: alteração salva para sincronizar.");
+        const queue = readQueue(queueKey).filter((item) => !(item.log_date === payload.log_date && item.meal_slot === payload.meal_slot));
+        writeQueue(queueKey, [...queue, payload]); setToast("Sem internet: alteração salva para sincronizar.");
       } else {
         setDay(previous); setToast(cause instanceof Error ? cause.message : "Alteração desfeita.");
       }
@@ -150,6 +169,7 @@ export function NutritionDashboard() {
                   <span className="block truncate text-xs text-zinc-400">{meal?.description || "Toque para adicionar"}{meal?.calories != null ? ` · ${meal.calories} kcal` : ""}</span>
                 </button>
                 <Button variant="ghost" size="icon-lg" aria-label={`Editar ${MEAL_LABELS[meal_slot]}`} onClick={() => setEditing({ slot: meal_slot, values: mealPayload(meal_slot, meal, {}) })}><Pencil aria-hidden /></Button>
+                {meal?.is_completed ? <Button asChild variant="ghost" size="icon-lg"><Link href={`/comunidade?meal=${meal.id}&date=${date}`} aria-label={`Compartilhar ${MEAL_LABELS[meal_slot]}`}><Share2 aria-hidden /></Link></Button> : null}
               </div>
             );
           })}

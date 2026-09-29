@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { FaqAdmin } from "@/components/admin/faq-admin";
 import { ApiClientError, apiData } from "@/lib/api/client";
 import { ACCESS_STATES, type AccessState, type AdminSubscriptionAction, type AdminSubscriptionItem, type AppSettingsRow, type SubscriptionRow } from "@/types/database";
 
@@ -57,6 +58,7 @@ export function AdminPanel() {
 
     <SubscriptionList data={list} onSelect={setSelected} />
     {list ? <div className="flex items-center justify-between text-sm text-zinc-400"><span>{list.total} resultado(s)</span><div className="flex items-center gap-2"><Button variant="outline" size="icon-lg" aria-label="Página anterior" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}><ChevronLeft aria-hidden /></Button><span>Página {page}</span><Button variant="outline" size="icon-lg" aria-label="Próxima página" disabled={page * list.page_size >= list.total} onClick={() => setPage((p) => p + 1)}><ChevronRight aria-hidden /></Button></div></div> : null}
+    <FaqAdmin />
     {settings ? <SettingsForm initial={settings} onSaved={setSettings} /> : null}
     <SubscriptionActions key={selected?.profile.id ?? "none"} item={selected} onClose={() => setSelected(undefined)} onSaved={async () => { setSelected(undefined); await loadAll(); }} />
   </div>;

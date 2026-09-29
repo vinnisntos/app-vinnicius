@@ -25,7 +25,7 @@ export default async function DashboardLayout({
 
   return (
     <AccessProvider initialAccess={access} role={(profile?.role ?? "user") as UserRole}>
-      <AppShell>{children}</AppShell>
+      <AppShell userId={userId}>{children}</AppShell>
     </AccessProvider>
   );
 }

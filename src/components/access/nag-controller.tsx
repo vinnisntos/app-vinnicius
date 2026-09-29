@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { shouldShowNagPopup } from "@/lib/access/nag";
 
-const STORAGE_KEY = "lifeos.nag.lastShownAt";
+const STORAGE_KEY_PREFIX = "lifeos.nag.lastShownAt";
 
 function countdownLabel(days = 0, hours = 0, minutes = 0) {
   if (days > 0) return `${days}d ${hours}h`;
@@ -17,10 +17,11 @@ function countdownLabel(days = 0, hours = 0, minutes = 0) {
   return `${Math.max(0, minutes)}min`;
 }
 
-export function NagController() {
+export function NagController({ userId }: { userId: string }) {
   const { nagMode, countdown } = useAccess();
   const router = useRouter();
   const [softOpen, setSoftOpen] = useState(false);
+  const storageKey = `${STORAGE_KEY_PREFIX}:${userId}`;
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -31,7 +32,7 @@ export function NagController() {
       const now = Date.now();
       let lastShownAt: number | null = null;
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(storageKey);
         lastShownAt = raw ? Number(raw) : null;
       } catch {
         lastShownAt = null;
@@ -39,14 +40,14 @@ export function NagController() {
       if (shouldShowNagPopup(nagMode, countdown, lastShownAt, now)) {
         setSoftOpen(true);
         try {
-          localStorage.setItem(STORAGE_KEY, String(now));
+          localStorage.setItem(storageKey, String(now));
         } catch {
           // O armazenamento pode estar indisponível; o aviso continua funcional.
         }
       }
     }, 0);
     return () => clearTimeout(id);
-  }, [nagMode, countdown]);
+  }, [nagMode, countdown, storageKey]);
 
   if (nagMode === "none") return null;
   const label = countdownLabel(countdown?.days, countdown?.hours, countdown?.minutes);
