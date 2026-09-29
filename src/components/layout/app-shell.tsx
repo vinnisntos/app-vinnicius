@@ -5,6 +5,7 @@ import { useAccess } from "@/components/access/access-provider";
 import { NagController } from "@/components/access/nag-controller";
 import { Logo } from "./logo";
 import { MobileBottomNav } from "./mobile-bottom-nav";
+import { AccountMenu } from "./account-menu";
 import { SidebarNav } from "./sidebar-nav";
 import { SignOutButton } from "./sign-out-button";
 
@@ -19,7 +20,7 @@ export function AppShell({ children, userId }: { children: ReactNode; userId: st
         <SignOutButton />
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center border-b border-white/10 bg-black/10 px-4 py-3 backdrop-blur-md md:hidden"><Logo /></header>
+        <header className="flex items-center border-b border-white/10 bg-black/10 px-4 py-3 backdrop-blur-md md:hidden"><Logo /><AccountMenu /></header>
         <main className="flex-1 px-4 pb-28 pt-6 [padding-top:calc(1.5rem+env(safe-area-inset-top))] md:px-8 md:py-8">
           <div className="mx-auto w-full max-w-7xl">{children}</div>
         </main>
