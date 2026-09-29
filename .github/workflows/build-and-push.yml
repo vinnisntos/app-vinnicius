@@ -4,18 +4,49 @@ name: Build e publica imagem Docker
 # produção — a instância EC2 é pequena e compartilhada com outros projetos;
 # um build local (`npm ci` + `next build`) já derrubou a máquina inteira uma
 # vez (ver docs/07-infraestrutura-deploy.md).
+#
+# `verify` é o portão de qualidade: typecheck, lint e testes. Em pull
+# request roda só ele; a imagem só é publicada (push na main) se passar.
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   workflow_dispatch: {}
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
-  build-and-push:
+  verify:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # Gera os tipos globais de rota (LayoutProps, RouteContext) que o
+      # `tsc` sozinho não conhece — normalmente criados por dev/build.
+      - run: npx next typegen
+
+      - run: npx tsc --noEmit
+
+      - run: npx eslint src
+
+      - run: npm test
+
+  build-and-push:
+    needs: verify
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
 
