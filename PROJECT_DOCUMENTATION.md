@@ -12,8 +12,8 @@ Documentação de base (arquitetura, segurança, deploy) continua em `docs/`.
 |---|---|---|
 | 1 | Data layer, API foundation, PWA | ✅ concluída |
 | 2 | Auth, trial/paywall, painel master | ✅ concluída |
-| 3 | UI mobile-first (Codex) | pendente |
-| 4 | Asaas + Google Calendar | pendente |
+| 3 | UI mobile-first (Codex) | ✅ concluída |
+| 4 | Asaas + Google Calendar | ✅ concluída |
 | 5 | Comunidade + FAQ UI (Codex) | pendente |
 | 6 | Revisão final / CI-CD | pendente |
 
@@ -219,3 +219,122 @@ repetida devolve 200 sem duplicar; id de outro usuário → 409 sem vazar.
   escalada de role bloqueada, paywall de página e de API, aprovação,
   revogação e extensão de trial, métricas numéricas, idempotência, settings
   e wa.me, FAQ, PWA sem sessão.
+
+---
+
+## Fase 3 — UI mobile-first (Codex)
+
+Delegada ao Codex via Orca (`run_0c6665bd60fc`, task `task_44f7586ea7b7`).
+Relatório do worker: `docs/phase-3-ui-report.md`. Revisão do coordenador:
+typecheck/lint/testes/build reexecutados de forma independente; três
+correções (fila offline por usuário, `/assinar` para revogado, trial_days
+dinâmico) enviadas junto com a Fase 5.
+
+Incidente de handoff: o Codex CLI 0.154 travava na tela "Update available"
+ao iniciar (o Orca bloqueia input em prompt de agente por segurança). Após
+decisão do usuário, atualizado para 0.159.1 e o dispatch foi reenviado com
+`--retry-of`.
+
+---
+
+## Fase 4 — Integrações de custo zero
+
+### Asaas (pagamentos)
+
+Fluxo: `/assinar` → `POST /api/billing/checkout` → página de pagamento do
+Asaas (Pix/boleto/cartão, `billingType: UNDEFINED`) → Asaas chama
+`POST /api/webhooks/asaas` → `subscriptions.status` muda → paywall libera.
+**O acesso nunca é liberado no checkout, só pelo webhook.**
+
+| Método | Rota | Guard | Contrato |
+|---|---|---|---|
+| POST | `/api/billing/checkout` | user | body `CheckoutRequest` `{ cpf? }` → `CheckoutResponse` `{ checkout_url }` · 409 já ativo · 403 revogado · 422 `fields.cpf` · 502 provedor |
+| POST | `/api/webhooks/asaas` | header `asaas-access-token` | 200 persistido · 401 token · 500 falha transitória (Asaas reenvia) · 503 sem token configurado |
+
+Checkout (`src/lib/modules/billing/service.ts`):
+- CPF exigido só na 1ª vez (Asaas exige para criar cliente), validado por
+  dígito verificador e **não armazenado** — só o `asaas_customer_id`.
+- Duas transações curtas com `SELECT … FOR UPDATE`: cliques concorrentes
+  não criam duas assinaturas, e falha na 2ª etapa não perde o cliente
+  criado na 1ª.
+- Reaproveita cobrança em aberto de tentativa anterior.
+- Sem `ASAAS_API_KEY`/`ASAAS_PLAN_VALUE` → devolve o link fixo
+  `app_settings.asaas_checkout_url` (liberação manual pelo master).
+
+Webhook (`src/lib/integrations/asaas/events.ts` puro + service):
+- Comparação do token em tempo constante (sha256 + `timingSafeEqual`).
+- Idempotente pelo id do evento (`asaas_webhook_events`, PK): reentrega
+  processada = no-op; evento que falhou é reprocessado.
+- Usuário resolvido por assinatura Asaas → cliente Asaas →
+  `externalReference` (= userId).
+
+| Evento | Efeito |
+|---|---|
+| `PAYMENT_CONFIRMED`, `PAYMENT_RECEIVED` | `active`, `current_period_end` = vencimento + 1 mês |
+| `PAYMENT_OVERDUE` | `past_due` (só se for a assinatura Asaas atual) |
+| `PAYMENT_REFUNDED`, `PAYMENT_CHARGEBACK_REQUESTED`, `SUBSCRIPTION_DELETED`, `SUBSCRIPTION_INACTIVATED` | `canceled` (só assinatura atual) |
+| demais | ignorado (registrado) |
+
+`revoked` (decisão do master) **nunca** é sobrescrito por webhook.
+
+**Configuração no painel Asaas:** Integrações → Webhooks → URL
+`https://lifeos.vinnisantos.com.br/api/webhooks/asaas`, token =
+`ASAAS_WEBHOOK_TOKEN`, eventos de Cobrança e Assinatura, fila ativa.
+
+### Google Calendar (lembretes sem servidor de push)
+
+Um **evento recorrente** (RRULE semanal) com alerta popup no horário, na
+agenda do próprio usuário: o app do Google Agenda notifica o celular para
+sempre, sem cron nem push pago do nosso lado.
+
+| Método | Rota | Guard | Contrato |
+|---|---|---|---|
+| GET | `/api/integrations/google` | access | `GoogleCalendarStatus` |
+| DELETE | `/api/integrations/google` | user | apaga eventos, revoga token, desconecta |
+| GET | `/api/integrations/google/connect` | access | redirect OAuth (usar como **link**, não fetch/form) |
+| GET | `/api/integrations/google/callback` | user | redirect `/lembretes?google=connected` ou `?google=erro&motivo=` |
+| GET | `/api/reminders` | access | `RemindersResponse` |
+| PUT | `/api/reminders/:kind` | access | `CalendarReminderUpsert` → `CalendarReminderRow` (502 = salvo sem sincronizar; 409 = reconectar) |
+| DELETE | `/api/reminders/:kind` | access | `{ deleted }` |
+
+Segurança do OAuth: Authorization Code + **PKCE**, `state` em cookie
+httpOnly amarrado ao `userId` (o callback recusa se a sessão for de outro
+usuário — impede ligar a agenda de terceiros à conta da vítima). Escopo
+mínimo `calendar.events`. Refresh token cifrado com **AES-256-GCM**
+(`GOOGLE_TOKEN_ENCRYPTION_KEY`), tabela sem policy RLS. `invalid_grant` →
+conexão apagada e 409 pedindo reconexão.
+
+Pendências de configuração (Google Cloud Console): criar projeto, ativar
+Calendar API, tela de consentimento OAuth e credencial "Aplicativo da Web"
+com o redirect URI acima. **Em modo "Testing" o Google expira refresh
+tokens em 7 dias e limita a 100 usuários de teste** — para produção é
+preciso publicar o app (escopo sensível `calendar.events` passa por
+verificação do Google, gratuita).
+
+### Verificação
+
+- 26 testes novos (CPF, AES-GCM incl. adulteração, mapeamento de eventos,
+  RRULE/próxima ocorrência/fuso) — 73 no total.
+- 44 asserções E2E contra o Supabase real: webhook (auth, idempotência,
+  assinatura antiga, past_due, revogado não reativa, evento informativo,
+  cliente desconhecido, payload inválido), checkout (fallback de link, CPF
+  inválido, master 409), lembretes (sem Google, validação, paywall),
+  OAuth (sem configuração, callback sem state), comunidade (abaixo).
+
+---
+
+## Fase 5 — Backend da comunidade
+
+Preparado antes do handoff da UI.
+
+| Método | Rota | Guard | Contrato |
+|---|---|---|---|
+| GET | `/api/community/feed?cursor=&scope=community\|mine` | access | `FeedPage` (20 por página, cursor por `(created_at, id)`) |
+| POST | `/api/community/posts` | access | `PostInsert` → `FeedPost` (201; idempotente por `id`) · 422 sem conteúdo/refeição alheia · 429 `rate_limited` (20/24h) |
+| DELETE | `/api/community/posts/:id` | access | autor (ou master) |
+| PUT/DELETE | `/api/community/posts/:id/reaction` | access | `{ kind }` → `FeedPost` |
+
+Como a via Drizzle ignora RLS, a regra de visibilidade da policy
+`community_or_owner_select` é reimplementada explicitamente em
+`src/lib/modules/comunidade/repository.ts` (`visibleTo`). Motivo de
+moderação visível só para master e autor.

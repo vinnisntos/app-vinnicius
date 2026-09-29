@@ -313,6 +313,12 @@ export type CalendarReminderUpsert = Pick<
 > &
   Partial<Pick<CalendarReminderRow, "duration_minutes" | "is_active">>;
 
+/** GET /api/reminders */
+export interface RemindersResponse {
+  reminders: CalendarReminderRow[];
+  google: GoogleCalendarStatus;
+}
+
 /** GET /api/integrations/google — token nunca sai do servidor. */
 export interface GoogleCalendarStatus {
   connected: boolean;
@@ -371,6 +377,15 @@ export type AdminSubscriptionAction =
   | { action: "extend_trial"; days: number; admin_notes?: string }
   | { action: "set_notes"; admin_notes: string };
 
+/**
+ * POST /api/billing/checkout — body opcional. `cpf` só é exigido na 1ª
+ * assinatura (o Asaas exige CPF para criar o cliente); se faltar, a rota
+ * responde 422 com `fields.cpf`. O CPF é repassado ao Asaas e não é salvo.
+ */
+export interface CheckoutRequest {
+  cpf?: string;
+}
+
 /** POST /api/billing/checkout */
 export interface CheckoutResponse {
   /** Página de pagamento do Asaas (Pix/boleto/cartão) — abrir em nova aba. */
@@ -399,6 +414,7 @@ export type ApiErrorCode =
   | "forbidden" // 403 — não é master / não é dono
   | "not_found" // 404
   | "conflict" // 409
+  | "rate_limited" // 429
   | "validation" // 400/422 — `fields` traz erros por campo
   | "upstream" // 502 — Asaas/Google falharam
   | "internal"; // 500
