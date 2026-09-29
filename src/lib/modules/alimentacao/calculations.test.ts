@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { calculateBMR, calculateDeficit, calculateTDEE } from "./calculations";
+import {
+  calculateBMR,
+  calculateDeficit,
+  calculateRecommendedCalories,
+  calculateTDEE,
+} from "./calculations";
 
 describe("calculateBMR (Mifflin-St Jeor)", () => {
   it("homem: soma +5", () => {
@@ -60,5 +65,22 @@ describe("calculateDeficit", () => {
 
   it("negativo quando consome mais que o TDEE (superávit)", () => {
     expect(calculateDeficit(2500, 3000)).toBe(-500);
+  });
+});
+
+describe("calculateRecommendedCalories", () => {
+  it("emagrecer: déficit de 20%, arredondado a 10", () => {
+    expect(calculateRecommendedCalories({ tdee: 2500, goal: "emagrecer", sex: "M" })).toBe(2000);
+    expect(calculateRecommendedCalories({ tdee: 2347, goal: "emagrecer", sex: "M" })).toBe(1880);
+  });
+
+  it("manter e ganhar", () => {
+    expect(calculateRecommendedCalories({ tdee: 2000, goal: "manter", sex: "F" })).toBe(2000);
+    expect(calculateRecommendedCalories({ tdee: 2000, goal: "ganhar", sex: "F" })).toBe(2200);
+  });
+
+  it("nunca abaixo do piso de segurança", () => {
+    expect(calculateRecommendedCalories({ tdee: 1400, goal: "emagrecer", sex: "F" })).toBe(1200);
+    expect(calculateRecommendedCalories({ tdee: 1700, goal: "emagrecer", sex: "M" })).toBe(1500);
   });
 });

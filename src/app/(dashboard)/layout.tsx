@@ -1,17 +1,31 @@
 import type { ReactNode } from "react";
-import { requireUserId } from "@/lib/auth/session";
+import { AccessProvider } from "@/components/access/access-provider";
 import { AppShell } from "@/components/layout/app-shell";
+import { requireAppAccess } from "@/lib/access/status";
+import { requireUserId } from "@/lib/auth/session";
+import { getProfile } from "@/lib/modules/conta/repository";
+import type { UserRole } from "@/types/database";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  // O middleware já bloqueia rota sem sessão; esta chamada é a segunda
-  // camada (garante que toda página deste grupo tenha um userId resolvido
-  // antes de qualquer query, e serve de defesa caso o layout seja alcançado
-  // por outro caminho no futuro).
-  await requireUserId();
+  // O proxy já bloqueia rota sem sessão; esta chamada é a segunda camada.
+  const userId = await requireUserId();
 
-  return <AppShell>{children}</AppShell>;
+  // Paywall de página: sem acesso (trial expirado/revogado) → /assinar.
+  // Redirect em vez de modal por cima: as páginas deste grupo buscam dado
+  // no server via Drizzle, então renderizá-las por baixo de um modal
+  // entregaria o conteúdo pago no HTML.
+  const [access, profile] = await Promise.all([
+    requireAppAccess(userId),
+    getProfile(userId),
+  ]);
+
+  return (
+    <AccessProvider initialAccess={access} role={(profile?.role ?? "user") as UserRole}>
+      <AppShell>{children}</AppShell>
+    </AccessProvider>
+  );
 }

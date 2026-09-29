@@ -145,6 +145,12 @@ export function apiRoute<G extends RouteGuard, P = Record<string, never>>(
           fields: z.flattenError(error).fieldErrors as Record<string, string[]>,
         });
       }
+      // Unique violation (postgres-js direto ou embrulhado pelo Drizzle).
+      const pgCode =
+        (error as { code?: string })?.code ?? (error as { cause?: { code?: string } })?.cause?.code;
+      if (pgCode === "23505") {
+        return errorResponse(409, { code: "conflict", message: "Registro já existe." });
+      }
       // Next usa exceções para redirect()/notFound() — nunca engolir.
       if (error instanceof Error && "digest" in error) throw error;
 

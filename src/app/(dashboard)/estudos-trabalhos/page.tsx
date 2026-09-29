@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { requireMasterPage } from "@/lib/access/status";
 import { requireUserId } from "@/lib/auth/session";
 import { getTodayIsoDate } from "@/lib/date";
 import { getBoard } from "@/lib/modules/estudos-trabalhos/repository";
@@ -8,6 +9,8 @@ export const metadata: Metadata = { title: "Estudos e Trabalhos" };
 
 export default async function EstudosTrabalhosPage() {
   const userId = await requireUserId();
+  // Módulo pessoal legado do Life OS — fora do produto SaaS.
+  await requireMasterPage(userId);
   const todayIso = getTodayIsoDate();
   const columns = await getBoard(userId);
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getAccessStatus } from "@/lib/access/status";
 import { requireUserId } from "@/lib/auth/session";
 import { getTodayIsoDate } from "@/lib/date";
 import { getDailyOverview } from "@/lib/modules/dashboard/repository";
@@ -30,10 +31,13 @@ export default async function DashboardPage() {
     "";
 
   const todayIso = getTodayIsoDate();
-  const [overview, categories] = await Promise.all([
+  const [overview, categories, access] = await Promise.all([
     getDailyOverview(userId, todayIso),
     getCategories(userId),
+    getAccessStatus(userId),
   ]);
+  // Kanban/Financeiro são módulos pessoais legados — só o master vê.
+  const isMaster = access.access_state === "master";
 
   const now = new Date();
   const hour = Number(
@@ -83,12 +87,16 @@ export default async function DashboardPage() {
           water={overview.water}
           todayIso={todayIso}
         />
-        <KanbanSummaryCard pendingCards={overview.pendingCards} todayIso={todayIso} />
-        <FinanceSummaryCard
-          balance={overview.monthBalancePreview}
-          categories={categories}
-          todayIso={todayIso}
-        />
+        {isMaster && (
+          <>
+            <KanbanSummaryCard pendingCards={overview.pendingCards} todayIso={todayIso} />
+            <FinanceSummaryCard
+              balance={overview.monthBalancePreview}
+              categories={categories}
+              todayIso={todayIso}
+            />
+          </>
+        )}
       </div>
     </div>
   );

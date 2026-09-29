@@ -2,15 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAccess } from "@/components/access/access-provider";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS } from "./nav-items";
 
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { role } = useAccess();
+  const items = NAV_ITEMS.filter((item) => !item.masterOnly || role === "master");
 
   return (
     <nav className="flex flex-col gap-1">
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const isActive =
           item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 

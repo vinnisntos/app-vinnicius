@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { requireMasterPage } from "@/lib/access/status";
 import { requireUserId } from "@/lib/auth/session";
 import { getTodayIsoDate } from "@/lib/date";
 import {
@@ -19,6 +20,8 @@ export const metadata: Metadata = { title: "Financeiro" };
 
 export default async function FinanceiroPage() {
   const userId = await requireUserId();
+  // Módulo pessoal legado do Life OS — fora do produto SaaS.
+  await requireMasterPage(userId);
   const todayIso = getTodayIsoDate();
   const yearMonth = getYearMonth(todayIso);
   const previousYearMonth = getPreviousYearMonth(yearMonth);

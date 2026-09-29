@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db/client";
 import type { AccessState, AccessStatus } from "@/types/database";
 
@@ -45,4 +45,13 @@ export async function requireAppAccess(userId: string): Promise<AccessStatus> {
   const access = await getAccessStatus(userId);
   if (!access.has_access) redirect("/assinar");
   return access;
+}
+
+/**
+ * Páginas só do master (painel admin + módulos pessoais legados). 404 em
+ * vez de 403 — não anuncia a existência da rota para assinantes.
+ */
+export async function requireMasterPage(userId: string): Promise<void> {
+  const access = await getAccessStatus(userId);
+  if (access.access_state !== "master") notFound();
 }

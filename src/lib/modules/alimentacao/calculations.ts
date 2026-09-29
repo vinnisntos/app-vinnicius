@@ -85,3 +85,32 @@ export function calculateTDEE(bmr: number, activityLevel: ActivityLevel): number
 export function calculateDeficit(tdee: number, caloriesConsumedToday: number): number {
   return tdee - caloriesConsumedToday;
 }
+
+export type NutritionGoal = "emagrecer" | "manter" | "ganhar";
+
+/**
+ * Pisos de segurança para dieta sem acompanhamento clínico — abaixo disso a
+ * recomendação não desce, mesmo com TDEE baixo.
+ */
+export const MIN_SAFE_KCAL: Record<Sex, number> = { M: 1500, F: 1200 };
+
+const GOAL_FACTORS: Record<NutritionGoal, number> = {
+  emagrecer: 0.8, // déficit de 20%
+  manter: 1,
+  ganhar: 1.1, // superávit de 10%
+};
+
+/**
+ * Meta diária recomendada = TDEE ajustado pelo objetivo, arredondada para
+ * múltiplo de 10 e nunca abaixo do piso do sexo. É derivada, nunca gravada
+ * (o peso muda, a meta acompanha).
+ */
+export function calculateRecommendedCalories(input: {
+  tdee: number;
+  goal: NutritionGoal;
+  sex: Sex;
+}): number {
+  const target = input.tdee * GOAL_FACTORS[input.goal];
+  const floored = Math.max(target, MIN_SAFE_KCAL[input.sex]);
+  return Math.round(floored / 10) * 10;
+}

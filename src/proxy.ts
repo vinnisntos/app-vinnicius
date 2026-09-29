@@ -36,6 +36,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // PWA (sw.js, manifest, ícones) precisa ser servido sem sessão — o
+    // navegador busca esses arquivos fora do contexto de login.
+    "/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.webmanifest|pwa-icon/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
