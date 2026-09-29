@@ -6,7 +6,9 @@ import { nextOccurrence } from "@/lib/integrations/google/recurrence";
  * next-action.test.ts. A tela só exibe o resultado; a prioridade mora aqui.
  *
  * Ordem:
- *   1. sem perfil nutricional        → configurar perfil
+ *   1. aplicação prevista hoje        → registrar medicação (sensível ao
+ *                                       horário; vem antes até do perfil)
+ *   1b. sem perfil nutricional       → configurar perfil
  *   2. refeição da janela atual       → registrar essa refeição
  *   3. refeição de janela já passada  → registrar a atrasada (exceto ceia)
  *   4. água atrás do ritmo do dia     → beber (quantidade sugerida)
@@ -47,9 +49,14 @@ export interface NextActionInput {
   waterTotalMl: number;
   waterGoalMl: number | null;
   latestWeightDate: string | null;
+  /** Medicamentos com aplicação prevista hoje e ainda não registrada. */
+  medicationsDue?: { id: string; name: string }[];
 }
 
 export function getNextAction(input: NextActionInput): NextAction {
+  const due = input.medicationsDue?.[0];
+  if (due) return { kind: "log_medication", medication_id: due.id, name: due.name };
+
   if (!input.hasProfile) return { kind: "setup_profile" };
 
   const now = toMinutes(input.nowTime);

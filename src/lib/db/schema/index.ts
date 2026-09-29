@@ -8,3 +8,6 @@ export * from "./subscriptions";
 export * from "./community";
 export * from "./content";
 export * from "./integrations";
+export * from "./health";
+export * from "./foods";
+export * from "./training";

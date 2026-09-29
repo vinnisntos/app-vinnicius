@@ -359,7 +359,7 @@ export interface NutritionDay {
   profile: NutritionProfileRow | null;
   latest_weight: WeightLogRow | null;
   /** Sempre os 5 slots, na ordem de MEAL_SLOTS; `meal` null = ainda não registrado. */
-  meals: { meal_slot: MealSlot; meal: MealLogRow | null }[];
+  meals: { meal_slot: MealSlot; meal: MealLogRow | null; items: MealLogItemRow[] }[];
   water_logs: WaterLogRow[];
   /** null enquanto não houver perfil nutricional + ao menos uma pesagem. */
   metrics: NutritionMetrics | null;
@@ -371,6 +371,7 @@ export type NextAction =
   | { kind: "log_meal"; meal_slot: MealSlot; overdue: boolean }
   | { kind: "drink_water"; suggested_ml: number; behind_ml: number }
   | { kind: "log_weight" }
+  | { kind: "log_medication"; medication_id: Uuid; name: string }
   | { kind: "all_done" };
 
 export interface NextReminder {
@@ -391,6 +392,12 @@ export interface DashboardSummary {
   metrics: NutritionMetrics | null;
   next_action: NextAction;
   next_reminder: NextReminder | null;
+  /** Último peso — ponto de partida do Stepper de pesagem. */
+  latest_weight_kg: number | null;
+  /** Treino de hoje no programa ativo (null sem programa). */
+  today_workout: { title: string; program_title: string; estimated_minutes: number | null; done_today: boolean } | null;
+  /** Dica do dia (rotaciona pelas publicadas). */
+  daily_tip: Pick<TipRow, "id" | "title" | "category" | "read_minutes"> | null;
 }
 
 /** GET /api/community/feed?cursor= */
@@ -426,6 +433,321 @@ export interface CheckoutRequest {
 export interface CheckoutResponse {
   /** Página de pagamento do Asaas (Pix/boleto/cartão) — abrir em nova aba. */
   checkout_url: string;
+}
+
+// =========================================================================
+// Medicação / peptídeos (0005) — o app REGISTRA a prescrição, nunca sugere dose
+// =========================================================================
+
+export const MEDICATION_CATEGORIES = ["glp1", "peptideo", "hormonal", "outro"] as const;
+export type MedicationCategory = (typeof MEDICATION_CATEGORIES)[number];
+
+export const MEDICATION_ROUTES = ["subcutanea", "oral", "intramuscular", "topica", "outra"] as const;
+export type MedicationRoute = (typeof MEDICATION_ROUTES)[number];
+
+export const DOSE_UNITS = ["mg", "mcg", "ui", "ml", "comprimido", "clique"] as const;
+export type DoseUnit = (typeof DOSE_UNITS)[number];
+
+export const MEDICATION_FREQUENCIES = ["diaria", "semanal", "quinzenal", "personalizada"] as const;
+export type MedicationFrequency = (typeof MEDICATION_FREQUENCIES)[number];
+
+export const INJECTION_SITES = [
+  "abdomen_esq",
+  "abdomen_dir",
+  "coxa_esq",
+  "coxa_dir",
+  "braco_esq",
+  "braco_dir",
+  "gluteo_esq",
+  "gluteo_dir",
+] as const;
+export type InjectionSite = (typeof INJECTION_SITES)[number];
+
+export const SIDE_EFFECTS = [
+  "nausea",
+  "vomito",
+  "diarreia",
+  "constipacao",
+  "azia",
+  "dor_abdominal",
+  "fadiga",
+  "dor_cabeca",
+  "tontura",
+  "perda_apetite",
+  "reacao_local",
+  "outro",
+] as const;
+export type SideEffect = (typeof SIDE_EFFECTS)[number];
+
+/** Aviso obrigatório em toda tela de medicação. */
+export const MEDICATION_DISCLAIMER =
+  "Este app não substitui acompanhamento médico. Siga a prescrição do seu médico e nunca altere a dose por conta própria.";
+
+export interface MedicationRow {
+  id: Uuid;
+  user_id: Uuid;
+  name: string;
+  category: MedicationCategory;
+  route: MedicationRoute;
+  dose_amount: number | null; // dose PRESCRITA informada pelo usuário
+  dose_unit: DoseUnit;
+  frequency: MedicationFrequency;
+  days_of_week: number[] | null; // 0 = domingo … 6 = sábado
+  started_on: IsoDate | null;
+  is_active: boolean;
+  prescribed_by: string | null;
+  notes: string | null;
+  created_at: IsoTimestamp;
+  updated_at: IsoTimestamp;
+}
+
+export type MedicationUpsert = Pick<MedicationRow, "name" | "category" | "route" | "dose_unit" | "frequency"> &
+  Partial<Pick<MedicationRow, "dose_amount" | "days_of_week" | "started_on" | "is_active" | "prescribed_by" | "notes">>;
+
+export interface MedicationLogRow {
+  id: Uuid;
+  user_id: Uuid;
+  medication_id: Uuid;
+  log_date: IsoDate;
+  taken_at: IsoTimestamp;
+  dose_amount: number | null;
+  dose_unit: DoseUnit | null;
+  injection_site: InjectionSite | null;
+  side_effects: SideEffect[];
+  severity: 0 | 1 | 2 | 3; // nenhum · leve · moderado · forte
+  notes: string | null;
+  created_at: IsoTimestamp;
+}
+
+/** POST /api/medications/:id/logs — `id` gerado no cliente (idempotente). */
+export type MedicationLogInsert = Pick<MedicationLogRow, "id" | "log_date"> &
+  Partial<Pick<MedicationLogRow, "dose_amount" | "dose_unit" | "injection_site" | "side_effects" | "severity" | "notes">>;
+
+export interface MedicationOverview {
+  medication: MedicationRow;
+  last_log: MedicationLogRow | null;
+  /** Próxima data prevista pela frequência cadastrada (null = sem agenda). */
+  next_due_date: IsoDate | null;
+  due_today: boolean;
+  taken_today: boolean;
+  /** Rodízio: local diferente dos últimos usados (vias injetáveis). Sugere LOCAL, nunca dose. */
+  suggested_site: InjectionSite | null;
+}
+
+/** GET /api/medications */
+export interface MedicationsResponse {
+  items: MedicationOverview[];
+  recent_logs: MedicationLogRow[]; // últimos 30 dias, mais recentes primeiro
+  side_effect_summary: { effect: SideEffect; count: number }[]; // 30 dias
+  /** true se houve efeito com severidade 3 nos últimos 7 dias → UI orienta procurar o médico. */
+  severe_recently: boolean;
+  disclaimer: string;
+}
+
+// =========================================================================
+// Progresso (0005)
+// =========================================================================
+
+export interface BodyMeasurementRow {
+  id: Uuid;
+  user_id: Uuid;
+  logged_at: IsoDate;
+  waist_cm: number | null;
+  hip_cm: number | null;
+  chest_cm: number | null;
+  arm_cm: number | null;
+  thigh_cm: number | null;
+  neck_cm: number | null;
+  body_fat_pct: number | null;
+  notes: string | null;
+  created_at: IsoTimestamp;
+}
+
+/** PUT /api/progress/measurements — upsert por dia. */
+export type BodyMeasurementUpsert = Pick<BodyMeasurementRow, "logged_at"> &
+  Partial<Omit<BodyMeasurementRow, "id" | "user_id" | "logged_at" | "created_at">>;
+
+/** GET /api/progress?days=90 */
+export interface ProgressResponse {
+  range_days: number;
+  weights: { date: IsoDate; weight_kg: number }[]; // crescente
+  measurements: BodyMeasurementRow[]; // crescente
+  weight_change_kg: number | null; // último − primeiro no intervalo
+  waist_change_cm: number | null;
+  /** Constância nos últimos 30 dias. */
+  consistency: {
+    meal_days: number; // dias com ≥ 1 refeição concluída
+    water_goal_days: number; // dias que bateram a meta de água
+    workouts: number; // treinos de programa registrados
+    medication_doses: number; // aplicações registradas
+  };
+}
+
+// =========================================================================
+// Alimentos (0005)
+// =========================================================================
+
+export const FOOD_CATEGORIES = [
+  "proteina",
+  "carboidrato",
+  "leguminosa",
+  "fruta",
+  "vegetal",
+  "laticinio",
+  "gordura",
+  "bebida",
+  "lanche",
+  "preparacao",
+] as const;
+export type FoodCategory = (typeof FOOD_CATEGORIES)[number];
+
+export interface FoodRow {
+  id: Uuid;
+  name: string;
+  category: FoodCategory;
+  portion_label: string; // "1 filé médio (100 g)"
+  portion_g: number;
+  kcal: number; // por porção
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  source: string;
+}
+
+export interface MealLogItemRow {
+  id: Uuid;
+  meal_log_id: Uuid;
+  food_id: Uuid | null;
+  name: string;
+  servings: number;
+  kcal: number; // total para as porções
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  created_at: IsoTimestamp;
+}
+
+/**
+ * POST /api/nutrition/meal-items — adiciona um alimento a uma refeição do
+ * dia (cria a refeição se não existir e marca como concluída). Informe
+ * `food_id` (catálogo) OU `custom` (valores próprios). `id` gerado no cliente.
+ */
+export type MealItemAdd = {
+  id: Uuid;
+  log_date: IsoDate;
+  meal_slot: MealSlot;
+  servings: number;
+} & (
+  | { food_id: Uuid; custom?: never }
+  | { food_id?: never; custom: { name: string; kcal: number; protein_g?: number; carbs_g?: number; fat_g?: number } }
+);
+
+/** GET /api/foods?q=&category= e GET /api/foods/recent */
+export interface FoodSearchResponse {
+  items: FoodRow[];
+}
+
+// =========================================================================
+// Treinos prontos (0005)
+// =========================================================================
+
+export const WORKOUT_GOALS = ["emagrecimento", "hipertrofia", "condicionamento", "corrida", "iniciante", "mobilidade"] as const;
+export type WorkoutGoal = (typeof WORKOUT_GOALS)[number];
+export const WORKOUT_LEVELS = ["iniciante", "intermediario", "avancado"] as const;
+export type WorkoutLevel = (typeof WORKOUT_LEVELS)[number];
+export const WORKOUT_LOCATIONS = ["academia", "casa", "ar_livre"] as const;
+export type WorkoutLocation = (typeof WORKOUT_LOCATIONS)[number];
+export const WORKOUT_KINDS = ["forca", "cardio", "corrida", "hiit", "mobilidade"] as const;
+export type WorkoutKind = (typeof WORKOUT_KINDS)[number];
+
+export interface WorkoutProgramRow {
+  id: Uuid;
+  slug: string;
+  title: string;
+  goal: WorkoutGoal;
+  level: WorkoutLevel;
+  location: WorkoutLocation;
+  days_per_week: number;
+  duration_weeks: number | null; // null = rotina que se repete
+  session_minutes: number | null;
+  summary: string;
+  description: string | null;
+  workout_count: number;
+}
+
+export interface ProgramExerciseRow {
+  id: Uuid;
+  order_index: number;
+  name: string;
+  sets: number | null;
+  reps: string | null;
+  rest_seconds: number | null;
+  duration_seconds: number | null;
+  distance_m: number | null;
+  intensity: string | null;
+  notes: string | null;
+}
+
+export interface ProgramWorkoutRow {
+  id: Uuid;
+  sequence: number;
+  week: number | null;
+  title: string;
+  focus: string | null;
+  kind: WorkoutKind;
+  estimated_minutes: number | null;
+  exercises: ProgramExerciseRow[];
+}
+
+/** GET /api/training/programs/:slug */
+export interface ProgramDetail {
+  program: WorkoutProgramRow;
+  workouts: ProgramWorkoutRow[];
+}
+
+export interface ProgramWorkoutLogRow {
+  id: Uuid;
+  program_workout_id: Uuid;
+  performed_on: IsoDate;
+  duration_minutes: number | null;
+  effort: 1 | 2 | 3 | 4 | 5 | null;
+  notes: string | null;
+  exercise_results: { exercise_id: Uuid; sets_done?: number; reps?: string; weight_kg?: number }[] | null;
+  created_at: IsoTimestamp;
+}
+
+/** POST /api/training/logs */
+export type ProgramWorkoutLogInsert = Pick<ProgramWorkoutLogRow, "id" | "program_workout_id" | "performed_on"> &
+  Partial<Pick<ProgramWorkoutLogRow, "duration_minutes" | "effort" | "notes" | "exercise_results">>;
+
+/** GET /api/training/today */
+export interface TrainingToday {
+  enrollment: { id: Uuid; started_on: IsoDate } | null;
+  program: WorkoutProgramRow | null;
+  /** Próximo treino da sequência (não do calendário). null = sem programa ou programa concluído. */
+  next_workout: ProgramWorkoutRow | null;
+  done_today: boolean;
+  completed_count: number;
+  /** Total de sessões em programas com progressão (ex.: corrida); null em rotinas. */
+  total_sessions: number | null;
+  program_completed: boolean;
+  recent_logs: ProgramWorkoutLogRow[];
+}
+
+// =========================================================================
+// Dicas / mentoria (0005)
+// =========================================================================
+
+export const TIP_CATEGORIES = ["alimentacao", "treino", "medicacao", "mentalidade", "comunidade", "app"] as const;
+export type TipCategory = (typeof TIP_CATEGORIES)[number];
+
+export interface TipRow {
+  id: Uuid;
+  title: string;
+  body: string;
+  category: TipCategory;
+  read_minutes: number;
+  published_at: IsoTimestamp;
 }
 
 // =========================================================================

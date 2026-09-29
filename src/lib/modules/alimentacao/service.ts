@@ -1,4 +1,6 @@
 import { toMealLogRow, toNutritionProfileRow, toWaterLogRow, toWeightLogRow } from "@/lib/api/mappers";
+import { toMealLogItemRow } from "@/lib/api/mappers-health";
+import { itemsForMeals } from "@/lib/modules/alimentos/repository";
 import { getTodayIsoDate } from "@/lib/date";
 import { getUserTimezone } from "@/lib/modules/conta/repository";
 import { MEAL_SLOTS, type NutritionDay, type NutritionMetrics } from "@/types/database";
@@ -32,6 +34,7 @@ export async function getNutritionDay(userId: string, date: string): Promise<Nut
   ]);
 
   const mealRows = meals.map(toMealLogRow);
+  const itemRows = (await itemsForMeals(userId, mealRows.map((m) => m.id))).map(toMealLogItemRow);
   const bySlot = new Map(mealRows.map((m) => [m.meal_slot, m]));
   const waterRows = water.map(toWaterLogRow);
   const waterTotal = waterRows.reduce((sum, w) => sum + w.amount_ml, 0);
@@ -81,7 +84,10 @@ export async function getNutritionDay(userId: string, date: string): Promise<Nut
     date,
     profile: profile ? toNutritionProfileRow(profile) : null,
     latest_weight: latestWeight ? toWeightLogRow(latestWeight) : null,
-    meals: MEAL_SLOTS.map((slot) => ({ meal_slot: slot, meal: bySlot.get(slot) ?? null })),
+    meals: MEAL_SLOTS.map((slot) => {
+      const meal = bySlot.get(slot) ?? null;
+      return { meal_slot: slot, meal, items: meal ? itemRows.filter((i) => i.meal_log_id === meal.id) : [] };
+    }),
     water_logs: waterRows,
     metrics,
   };

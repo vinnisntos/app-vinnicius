@@ -41,3 +41,19 @@ export const helpTooltips = pgTable("help_tooltips", {
 
 export type FaqItem = typeof faqItems.$inferSelect;
 export type HelpTooltip = typeof helpTooltips.$inferSelect;
+
+/** Dicas / mentoria — conteúdo curado pelo master. */
+export const tips = pgTable("tips", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  category: text("category").notNull(), // alimentacao|treino|medicacao|mentalidade|comunidade|app
+  readMinutes: smallint("read_minutes").notNull().default(2),
+  isPublished: boolean("is_published").notNull().default(true),
+  publishedAt: timestamp("published_at", { withTimezone: true }).notNull().default(sql`now()`),
+  authorId: uuid("author_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`now()`),
+});
+
+export type Tip = typeof tips.$inferSelect;

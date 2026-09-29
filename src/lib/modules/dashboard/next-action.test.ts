@@ -16,6 +16,17 @@ describe("getNextAction", () => {
     expect(getNextAction({ ...base, hasProfile: false })).toEqual({ kind: "setup_profile" });
   });
 
+  it("dia de aplicação vem antes de tudo, inclusive do perfil", () => {
+    expect(getNextAction({ ...base, medicationsDue: [{ id: "m1", name: "Semaglutida" }] })).toEqual({
+      kind: "log_medication",
+      medication_id: "m1",
+      name: "Semaglutida",
+    });
+    expect(getNextAction({ ...base, hasProfile: false, medicationsDue: [{ id: "m1", name: "X" }] }).kind).toBe(
+      "log_medication",
+    );
+  });
+
   it("refeição da janela atual pendente", () => {
     expect(getNextAction(base)).toEqual({ kind: "log_meal", meal_slot: "almoco", overdue: false });
   });
