@@ -50,6 +50,12 @@ export type SubscriptionEffect =
        * atraso/cancelamento de uma assinatura antiga não derruba a nova.
        */
       requireCurrentSubscription: boolean;
+      /**
+       * Fim de assinatura (SUBSCRIPTION_DELETED/INACTIVATED) NÃO corta o
+       * acesso de quem pediu cancelamento: vale até current_period_end.
+       * Estorno/chargeback cortam na hora (o dinheiro voltou).
+       */
+      respectsPendingCancellation?: boolean;
     };
 
 const PAID = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
@@ -82,7 +88,10 @@ export function mapAsaasEvent(payload: AsaasWebhookPayload): SubscriptionEffect 
   if (event === "PAYMENT_OVERDUE") {
     return { kind: "set_status", status: "past_due", requireCurrentSubscription: true };
   }
-  if (REVERSED.has(event) || SUBSCRIPTION_ENDED.has(event)) {
+  if (SUBSCRIPTION_ENDED.has(event)) {
+    return { kind: "set_status", status: "canceled", requireCurrentSubscription: true, respectsPendingCancellation: true };
+  }
+  if (REVERSED.has(event)) {
     return { kind: "set_status", status: "canceled", requireCurrentSubscription: true };
   }
   return { kind: "ignore", reason: `evento ${event} não afeta acesso` };

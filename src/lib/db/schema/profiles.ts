@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { authUsers } from "./auth";
 
 export const profiles = pgTable("profiles", {
@@ -12,6 +12,9 @@ export const profiles = pgTable("profiles", {
   role: text("role").notNull().default("user"), // 'master' | 'user' — só master altera (trigger)
   email: text("email"), // cópia de auth.users.email, sincronizada por trigger
   phone: text("phone"), // só dígitos, catálogo
+  onboardingCompletedAt: timestamp("onboarding_completed_at", { withTimezone: true }),
+  soundEnabled: boolean("sound_enabled").notNull().default(true),
+  hapticsEnabled: boolean("haptics_enabled").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),

@@ -30,6 +30,7 @@ type AdminRow = {
   is_active_subscription: boolean | null;
   trial_ends_at: Date | null;
   current_period_end: Date | null;
+  cancel_requested_at: Date | null;
   asaas_customer_id: string | null;
   asaas_subscription_id: string | null;
   approved_by: string | null;
@@ -54,7 +55,7 @@ export async function listSubscriptions(
   const rows = await db.execute<AdminRow>(sql`
     select p.id, p.full_name, p.email, p.phone, p.role, p.created_at,
            a.access_state,
-           s.status, s.is_active_subscription, s.trial_ends_at, s.current_period_end,
+           s.status, s.is_active_subscription, s.trial_ends_at, s.current_period_end, s.cancel_requested_at,
            s.asaas_customer_id, s.asaas_subscription_id, s.approved_by, s.approved_at,
            s.revoked_at, s.admin_notes,
            s.created_at as sub_created_at, s.updated_at as sub_updated_at,
@@ -86,6 +87,7 @@ export async function listSubscriptions(
           is_active_subscription: Boolean(r.is_active_subscription),
           trial_ends_at: new Date(r.trial_ends_at!).toISOString(),
           current_period_end: isoOrNull(r.current_period_end),
+          cancel_requested_at: isoOrNull(r.cancel_requested_at),
           asaas_customer_id: r.asaas_customer_id,
           asaas_subscription_id: r.asaas_subscription_id,
           approved_by: r.approved_by,

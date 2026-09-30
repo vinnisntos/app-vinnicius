@@ -111,6 +111,14 @@ export const asaas = {
     return request<AsaasSubscription>("POST", "/subscriptions", input);
   },
 
+  /** Remove a assinatura no Asaas (para as cobranças futuras). */
+  cancelSubscription(subscriptionId: string) {
+    return request<{ deleted: boolean; id: string }>(
+      "DELETE",
+      `/subscriptions/${encodeURIComponent(subscriptionId)}`,
+    );
+  },
+
   async listSubscriptionPayments(subscriptionId: string) {
     const page = await request<{ data: AsaasPayment[] }>(
       "GET",

@@ -57,4 +57,9 @@ describe("mapAsaasEvent", () => {
   it("pagamento confirmado sem dueDate é ignorado (não inventa período)", () => {
     expect(mapAsaasEvent(evt("PAYMENT_CONFIRMED", { payment: { id: "p", customer: "c" } })).kind).toBe("ignore");
   });
+
+  it("fim de assinatura respeita cancelamento pedido; estorno não", () => {
+    expect(mapAsaasEvent(evt("SUBSCRIPTION_DELETED"))).toMatchObject({ status: "canceled", respectsPendingCancellation: true });
+    expect(mapAsaasEvent(evt("PAYMENT_REFUNDED"))).not.toHaveProperty("respectsPendingCancellation");
+  });
 });
