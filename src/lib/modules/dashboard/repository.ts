@@ -1,14 +1,8 @@
-import { computeMonthBalance, getYearMonth } from "@/lib/modules/financeiro/calculations";
-import { getTransactionsForMonth } from "@/lib/modules/financeiro/repository";
 import { getOverdueAndTodayCards, type BoardCard } from "@/lib/modules/estudos-trabalhos/repository";
 
-export type DailyOverview = { pendingCards: BoardCard[]; monthBalancePreview: number };
+export type DailyOverview = { pendingCards: BoardCard[] };
 
-/** Resumo legado restrito aos dois cards administrativos do master. */
+/** Resumo do Kanban disponível apenas para o master. */
 export async function getDailyOverview(userId: string, todayIso: string): Promise<DailyOverview> {
-  const [pendingCards, transactions] = await Promise.all([
-    getOverdueAndTodayCards(userId, todayIso),
-    getTransactionsForMonth(userId, getYearMonth(todayIso)),
-  ]);
-  return { pendingCards, monthBalancePreview: computeMonthBalance(transactions).balance };
+  return { pendingCards: await getOverdueAndTodayCards(userId, todayIso) };
 }

@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   SquareKanban,
   Users,
-  Wallet,
 } from "lucide-react";
 
 export type NavItem = {
@@ -32,6 +31,5 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/dicas", label: "Dicas", icon: Lightbulb, mobile: "menu" },
   { href: "/faq", label: "Ajuda", icon: CircleHelp, mobile: "menu" },
   { href: "/admin", label: "Admin", icon: ShieldCheck, masterOnly: true, mobile: "menu" },
-  { href: "/financeiro", label: "Financeiro", icon: Wallet, masterOnly: true, mobile: "menu" },
   { href: "/estudos-trabalhos", label: "Estudos e Trabalhos", icon: SquareKanban, masterOnly: true, mobile: "menu" },
 ];

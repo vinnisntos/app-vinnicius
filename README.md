@@ -1,25 +1,21 @@
 # lifeos.vinnisantos.com.br — Life OS
 
-Sistema pessoal de gestão de rotina de Vinnicius Santos: centraliza estudos, estágio,
-treino, alimentação e finanças em um único painel diário.
+Life OS reúne alimentação, água, treinos, progresso e comunidade para uma rotina com constância.
 
-> **Status:** em produção em `lifeos.vinnisantos.com.br`. Todos os 5 módulos
-> (**Dashboard**, **Financeiro**, **Treinos**, **Alimentação**, **Estudos e
-> Trabalhos**) completos e testados ponta a ponta — ver
-> [`docs/08-processo-desenvolvimento.md`](docs/08-processo-desenvolvimento.md#fases-de-implementação)
-> para pendências abertas conhecidas (CI de qualidade, automação de deploy).
+> **Status:** em produção em `lifeos.vinnisantos.com.br`. O site institucional
+> fica em `/site` e também aparece na raiz para visitantes sem sessão.
 
 ## Módulos
 
 | Módulo | Responsabilidade |
 |---|---|
 | **Dashboard** | Checklist diário consolidando os demais módulos |
-| **Financeiro** | Fluxo de caixa: renda fixa (estágio), renda variável (corridas), despesas |
 | **Treinos** | Tracker de calistenia (divisão AB) |
 | **Alimentação** | TDEE, déficit calórico, checklist de refeições e água |
 | **Estudos e Trabalhos** | Kanban de provas, trabalhos, estágio e projetos pessoais |
 
-Acesso é privado, único usuário, protegido por login (Supabase Auth).
+O aplicativo usa contas individuais protegidas pelo Supabase Auth. O site,
+os termos e a política de privacidade são públicos.
 
 ## Documentação
 
@@ -59,5 +55,5 @@ cadastro (ver [ADR-0003](docs/adr/0003-autenticacao-supabase.md)), crie o
 usuário manualmente em Authentication > Users no painel Supabase.
 
 Outros scripts: `npm run build`, `npm run lint`, `npm run test` (Vitest —
-funções puras de Alimentação, Treinos, Financeiro e Estudos e Trabalhos),
+funções puras de Alimentação, Treinos e Estudos e Trabalhos),
 `npm run db:studio` (abre o Drizzle Studio para inspecionar o banco).

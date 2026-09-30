@@ -168,14 +168,14 @@ URLs incluir `https://lifeos.vinnisantos.com.br/auth/confirm` e
 
 ### Papéis na navegação
 
-`NAV_ITEMS[].masterOnly` — Admin, Financeiro e Estudos e Trabalhos só para
-master (menu **e** rota: `requireMasterPage` responde 404). Os cards de
-Kanban/Financeiro do Dashboard também só aparecem para master.
+`NAV_ITEMS[].masterOnly` — Admin e Estudos e Trabalhos só para master
+(menu **e** rota: `requireMasterPage` responde 404). O card do Kanban do
+Dashboard também só aparece para master.
 
 ### Painel master — rotas (`guard: "master"`)
 
-Estrutura reaproveitada do módulo Financeiro (`schema.ts` Zod +
-`repository.ts` + rotas finas): `src/lib/modules/admin/`.
+O painel usa `schema.ts` Zod, `repository.ts` e rotas finas em
+`src/lib/modules/admin/`.
 
 | Método | Rota | Body / query | Retorno |
 |---|---|---|---|
