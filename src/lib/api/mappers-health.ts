@@ -137,5 +137,6 @@ export const toTipRow = (t: Tip): TipRow => ({
   body: t.body,
   category: t.category as TipCategory,
   read_minutes: t.readMinutes,
+  is_published: t.isPublished,
   published_at: iso(t.publishedAt),
 });

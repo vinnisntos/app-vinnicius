@@ -29,6 +29,12 @@ export async function listTips(category?: TipCategory): Promise<TipRow[]> {
   return rows.map(toTipRow);
 }
 
+/** Listagem completa só pela rota com guard master. */
+export async function listAllTips(): Promise<TipRow[]> {
+  const rows = await db.select().from(tips).orderBy(desc(tips.createdAt));
+  return rows.map(toTipRow);
+}
+
 /** Dica do dia: rotação determinística pelo dia do ano (todos veem a mesma). */
 export function pickDailyTip<T>(items: T[], isoDate: string): T | null {
   if (items.length === 0) return null;

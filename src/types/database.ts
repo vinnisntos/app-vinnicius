@@ -747,6 +747,7 @@ export interface TipRow {
   body: string;
   category: TipCategory;
   read_minutes: number;
+  is_published: boolean;
   published_at: IsoTimestamp;
 }
 
