@@ -28,6 +28,7 @@ export const subscriptions = pgTable("subscriptions", {
   asaasCustomerId: text("asaas_customer_id").unique(),
   asaasSubscriptionId: text("asaas_subscription_id").unique(),
   lastAsaasEventAt: timestamp("last_asaas_event_at", { withTimezone: true }),
+  cancelRequestedAt: timestamp("cancel_requested_at", { withTimezone: true }),
   approvedBy: uuid("approved_by").references(() => authUsers.id, {
     onDelete: "set null",
   }),

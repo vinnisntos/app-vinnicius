@@ -50,6 +50,9 @@ export const toProfileRow = (p: Profile): ProfileRow => ({
   role: p.role as UserRole,
   email: p.email,
   phone: p.phone,
+  onboarding_completed_at: isoOrNull(p.onboardingCompletedAt),
+  sound_enabled: p.soundEnabled,
+  haptics_enabled: p.hapticsEnabled,
   created_at: iso(p.createdAt),
   updated_at: iso(p.updatedAt),
 });
@@ -60,6 +63,7 @@ export const toSubscriptionRow = (s: Subscription): SubscriptionRow => ({
   is_active_subscription: s.isActiveSubscription ?? s.status === "active",
   trial_ends_at: iso(s.trialEndsAt),
   current_period_end: isoOrNull(s.currentPeriodEnd),
+  cancel_requested_at: isoOrNull(s.cancelRequestedAt),
   asaas_customer_id: s.asaasCustomerId,
   asaas_subscription_id: s.asaasSubscriptionId,
   approved_by: s.approvedBy,

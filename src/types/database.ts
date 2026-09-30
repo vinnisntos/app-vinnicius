@@ -86,14 +86,41 @@ export interface ProfileRow {
   role: UserRole; // só master altera
   email: string | null; // sincronizado do Auth, não editável pelo usuário
   phone: string | null; // só dígitos, 10–13
+  /** null = ainda não passou pelo assistente de boas-vindas. */
+  onboarding_completed_at: IsoTimestamp | null;
+  sound_enabled: boolean;
+  haptics_enabled: boolean;
   created_at: IsoTimestamp;
   updated_at: IsoTimestamp;
 }
 
 /** Campos que o próprio usuário pode editar no perfil. */
 export type ProfileUpdate = Partial<
-  Pick<ProfileRow, "full_name" | "avatar_url" | "timezone" | "phone">
->;
+  Pick<ProfileRow, "full_name" | "avatar_url" | "timezone" | "phone" | "sound_enabled" | "haptics_enabled">
+> & {
+  /** true marca o assistente de boas-vindas como concluído (ou pulado). */
+  onboarding_completed?: boolean;
+};
+
+/** POST /api/me/password */
+export interface PasswordChange {
+  current_password: string;
+  new_password: string;
+}
+
+/** DELETE /api/me — exclusão da conta pelo próprio usuário (LGPD). */
+export interface AccountDeletion {
+  /** Precisa ser exatamente "EXCLUIR". */
+  confirm: "EXCLUIR";
+  password: string;
+}
+
+/** POST /api/billing/cancel */
+export interface CancelSubscriptionResponse {
+  cancel_requested_at: IsoTimestamp;
+  /** Acesso continua até aqui (null = termina agora). */
+  access_until: IsoTimestamp | null;
+}
 
 /** Perfil público do autor no feed (RPC get_community_profiles). */
 export type CommunityProfile = Pick<ProfileRow, "id" | "full_name" | "avatar_url">;
@@ -104,6 +131,8 @@ export interface SubscriptionRow {
   is_active_subscription: boolean; // gerada: status = 'active'
   trial_ends_at: IsoTimestamp;
   current_period_end: IsoTimestamp | null;
+  /** Cancelamento pedido pelo usuário: acesso vale até current_period_end. */
+  cancel_requested_at: IsoTimestamp | null;
   asaas_customer_id: string | null;
   asaas_subscription_id: string | null;
   approved_by: Uuid | null;

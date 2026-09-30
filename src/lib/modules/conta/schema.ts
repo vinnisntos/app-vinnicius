@@ -22,6 +22,9 @@ export const updateProfileSchema = z
       .string()
       .refine((tz) => Intl.supportedValuesOf("timeZone").includes(tz), "Fuso horário inválido."),
     phone: phoneSchema.nullable(),
+    sound_enabled: z.boolean(),
+    haptics_enabled: z.boolean(),
+    onboarding_completed: z.literal(true),
   })
   .partial()
   .strict();

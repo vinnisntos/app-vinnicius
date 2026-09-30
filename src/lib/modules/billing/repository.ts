@@ -114,6 +114,8 @@ export async function applyEffect(
       status: effect.status,
       lastAsaasEventAt: eventCreatedAt,
       ...(effect.currentPeriodEnd && { currentPeriodEnd: new Date(effect.currentPeriodEnd) }),
+      // Pagou de novo → desiste do cancelamento pedido antes.
+      ...(effect.status === "active" && { cancelRequestedAt: null }),
       ...(effect.status === "active" &&
         eventSubscriptionId && {
           asaasSubscriptionId: sql`coalesce(${subscriptions.asaasSubscriptionId}, ${eventSubscriptionId})`,
@@ -123,6 +125,13 @@ export async function applyEffect(
       and(
         eq(subscriptions.userId, userId),
         ne(subscriptions.status, "revoked"),
+        effect.respectsPendingCancellation
+          ? or(
+              isNull(subscriptions.cancelRequestedAt),
+              isNull(subscriptions.currentPeriodEnd),
+              lte(subscriptions.currentPeriodEnd, sql`now()`),
+            )
+          : undefined,
         or(isNull(subscriptions.lastAsaasEventAt), lte(subscriptions.lastAsaasEventAt, eventCreatedAt)),
         !effect.requireCurrentSubscription && eventSubscriptionId
           ? or(isNull(subscriptions.asaasSubscriptionId), eq(subscriptions.asaasSubscriptionId, eventSubscriptionId))
