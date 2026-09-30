@@ -8,6 +8,8 @@ export const APP_CONFIG = {
   description: "Alimentação, água, treino e comunidade para emagrecer com constância.",
   brandColor: "#9333EA", // --brand-600
   backgroundColor: "#09090b", // --background (tema dark)
+  lightBackgroundColor: "#f6f3fb",
+  url: "https://lifeos.vinnisantos.com.br",
   locale: "pt-BR",
   defaultTimezone: "America/Sao_Paulo",
 } as const;

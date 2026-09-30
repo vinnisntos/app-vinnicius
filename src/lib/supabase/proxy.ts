@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const AUTH_PAGES = ["/login", "/cadastro", "/esqueci-senha"];
 
 /** Acessíveis com ou sem sessão. */
-const OPEN_PATHS = ["/auth/", "/faq", "/offline"];
+const OPEN_PATHS = ["/auth/", "/faq", "/offline", "/site", "/termos", "/privacidade", "/robots.txt", "/sitemap.xml"];
 
 const startsWithAny = (pathname: string, prefixes: string[]) =>
   prefixes.some((prefix) => pathname === prefix || pathname.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`));
@@ -65,19 +65,44 @@ export async function updateSession(
     return supabaseResponse;
   }
 
+  // O módulo foi retirado: a rota antiga deve responder 404 para todos.
+  if (pathname === "/financeiro" || pathname.startsWith("/financeiro/")) {
+    return supabaseResponse;
+  }
+
   const isAuthPage = startsWithAny(pathname, AUTH_PAGES);
   const isPublicPath = isAuthPage || startsWithAny(pathname, OPEN_PATHS);
+
+  // O rewrite preserva a URL pública e repassa o nonce e cookies renovados.
+  const navigationResponse = (url: URL, rewrite = false) => {
+    const response = rewrite
+      ? NextResponse.rewrite(url, { request: { headers: requestHeaders } })
+      : NextResponse.redirect(url);
+    supabaseResponse.headers.forEach((value, name) => {
+      if (name !== "set-cookie" && !name.startsWith("x-middleware-")) response.headers.set(name, value);
+    });
+    supabaseResponse.cookies.getAll().forEach(({ name, value, ...options }) =>
+      response.cookies.set(name, value, options),
+    );
+    return response;
+  };
+
+  if (!user && pathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/site";
+    return navigationResponse(url, true);
+  }
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return navigationResponse(url);
   }
 
   if (user && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
-    return NextResponse.redirect(url);
+    return navigationResponse(url);
   }
 
   return supabaseResponse;

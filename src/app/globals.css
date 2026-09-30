@@ -4,12 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * Tokens herdados de vinnisantos.com.br (ver docs/05-design-system.md).
- * O app é dark-mode nativo: `:root` e `.dark` carregam a mesma paleta —
- * não existe variação clara, a classe `dark` no <html> é só para manter os
- * componentes shadcn/ui que dependem do seletor `.dark` funcionando.
- */
+/* Tokens semânticos para os temas claro e escuro. */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -25,6 +20,22 @@
   --color-success-500: var(--success-500);
   --color-warning-500: var(--warning-500);
   --color-danger-500: var(--danger-500);
+  --color-glass: var(--glass);
+  --color-glass-border: var(--glass-border);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-solid: var(--surface-solid);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-success: var(--success-text);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning-text);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger-text);
+  --color-danger-soft: var(--danger-soft);
+  --color-on-bright: var(--on-bright);
+  --color-on-brand: #ffffff;
 
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -64,58 +75,73 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root,
-.dark {
-  color-scheme: dark;
+:root {
+  color-scheme: light;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     sans-serif;
 
-  --background: #09090b;
-  --foreground: #ffffff;
+  --background: #f6f3fb;
+  --foreground: #1c1627;
+  --text-secondary: #433b50;
+  --text-tertiary: #5c536a;
+  --glass: rgb(255 255 255 / .78);
+  --glass-border: rgb(59 36 81 / .14);
+  --surface-muted: #eee9f4;
+  --surface-solid: #ffffff;
+  --glass-shadow: 0 12px 36px rgb(49 26 78 / .08);
+  --brand-strong: #6b169f;
+  --brand-soft: rgb(107 22 159 / .09);
+  --success-text: #08654b;
+  --success-soft: rgb(8 101 75 / .11);
+  --warning-text: #775000;
+  --warning-soft: rgb(119 80 0 / .11);
+  --danger-text: #a31943;
+  --danger-soft: rgb(163 25 67 / .10);
+  --on-bright: #09221a;
 
   /* Marca — violeta, extraído de vinnisantos.com.br */
-  --brand-400: #c084fc;
-  --brand-500: #a855f7;
-  --brand-600: #9333ea;
+  --brand-400: #7d26b6;
+  --brand-500: #7620ae;
+  --brand-600: #6b169f;
   --brand-900: #3b0764;
 
   --success-500: #34d399;
   --warning-500: #fbbf24;
-  --danger-500: #fb7185;
+  --danger-500: #be123c;
 
   /* Superfícies "vidro": tinta translúcida sobre o --background, nunca cor sólida */
-  --card: rgb(255 255 255 / 0.05);
+  --card: var(--glass);
   --card-foreground: var(--foreground);
-  --popover: #18181b;
+  --popover: var(--surface-solid);
   --popover-foreground: var(--foreground);
 
   --primary: var(--brand-600);
   --primary-foreground: #ffffff;
-  --secondary: rgb(255 255 255 / 0.05);
+  --secondary: rgb(49 26 78 / .07);
   --secondary-foreground: var(--foreground);
-  --muted: rgb(255 255 255 / 0.08);
-  --muted-foreground: oklch(70.7% 0.022 261.325);
-  --accent: rgb(255 255 255 / 0.08);
+  --muted: rgb(49 26 78 / .08);
+  --muted-foreground: var(--text-secondary);
+  --accent: rgb(49 26 78 / .08);
   --accent-foreground: var(--foreground);
   --destructive: var(--danger-500);
 
-  --border: rgb(255 255 255 / 0.1);
-  --input: rgb(255 255 255 / 0.05);
+  --border: var(--glass-border);
+  --input: rgb(49 26 78 / .05);
   --ring: var(--brand-500);
 
   --chart-1: var(--brand-400);
   --chart-2: var(--brand-600);
   --chart-3: var(--success-500);
   --chart-4: var(--danger-500);
-  --chart-5: oklch(55.1% 0.027 264.364);
+  --chart-5: var(--text-tertiary);
 
   --radius: 0.5rem;
 
-  --sidebar: var(--background);
+  --sidebar: var(--glass);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--brand-600);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgb(255 255 255 / 0.05);
+  --sidebar-accent: var(--brand-soft);
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--brand-500);
@@ -123,6 +149,53 @@
   /* Halo suave em torno de elementos primários — usar com moderação (1-2 por tela) */
   --shadow-glow: 0 0 24px rgb(168 85 247 / 0.3);
 }
+
+.dark {
+  color-scheme: dark;
+  --background: #09090b;
+  --foreground: #f7f5fc;
+  --text-secondary: #d2cddb;
+  --text-tertiary: #b6afc1;
+  --glass: rgb(27 25 33 / .84);
+  --glass-border: rgb(255 255 255 / .14);
+  --surface-muted: #14121a;
+  --surface-solid: #211e29;
+  --glass-shadow: 0 16px 38px rgb(0 0 0 / .25);
+  --brand-strong: #d7a1ff;
+  --brand-soft: rgb(168 85 247 / .16);
+  --success-text: #80e6c0;
+  --success-soft: rgb(52 211 153 / .13);
+  --warning-text: #ffdc83;
+  --warning-soft: rgb(251 191 36 / .14);
+  --danger-text: #ff9db6;
+  --danger-soft: rgb(251 113 133 / .14);
+  --brand-400: #c084fc;
+  --brand-500: #a855f7;
+  --brand-600: #9333ea;
+  --danger-500: #be123c;
+  --secondary: rgb(255 255 255 / .07);
+  --muted: rgb(255 255 255 / .10);
+  --accent: rgb(255 255 255 / .10);
+  --input: rgb(255 255 255 / .07);
+}
+
+.site-shell { background-image: radial-gradient(circle at 85% 8%, var(--brand-soft), transparent 38%); }
+.app-ambient { background-image: radial-gradient(circle at 85% 4%, var(--brand-soft), transparent 38%), radial-gradient(circle at 8% 98%, var(--brand-soft), transparent 32%); }
+.auth-grid { background-size: 44px 44px; background-image: linear-gradient(to right, var(--glass-border) 1px, transparent 1px), linear-gradient(to bottom, var(--glass-border) 1px, transparent 1px); opacity: .35; }
+.site-hero { background-image: radial-gradient(circle at 50% 0%, var(--brand-soft), transparent 62%); }
+.site-card { border: 1px solid var(--glass-border); border-radius: 1.5rem; background: var(--glass); box-shadow: var(--glass-shadow); backdrop-filter: blur(18px); padding: 1.5rem; }
+.site-cta, .site-cta-outline { display: inline-flex; min-height: 3.25rem; align-items: center; justify-content: center; border-radius: .9rem; padding: .8rem 1.4rem; font-weight: 700; text-align: center; }
+.site-cta { background: var(--brand-600); color: white; box-shadow: var(--glass-shadow); }
+.site-cta:hover { filter: brightness(1.08); }
+.site-cta-outline { border: 1px solid var(--glass-border); background: var(--glass); color: var(--foreground); }
+.site-eyebrow { color: var(--brand-strong); font-size: .75rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+.site-heading { margin-top: .6rem; font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 750; line-height: 1.14; letter-spacing: -.03em; }
+.legal-page { max-width: 52rem; margin: 0 auto; padding: 2rem 1rem 6rem; line-height: 1.75; }
+.legal-page h1 { margin: 2rem 0 1rem; font-size: clamp(2rem, 5vw, 3rem); font-weight: 750; line-height: 1.15; }
+.legal-page h2 { margin: 2rem 0 .5rem; font-size: 1.3rem; font-weight: 700; }
+.legal-page a { color: var(--brand-strong); text-decoration: underline; text-underline-offset: 3px; }
+.legal-warning { border: 1px solid var(--warning-text); border-radius: .8rem; background: var(--warning-soft); color: var(--warning-text); padding: .75rem 1rem; font-weight: 700; }
+.legal-back { margin-top: 2.5rem; }
 
 @layer base {
   * {
