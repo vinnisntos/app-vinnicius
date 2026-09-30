@@ -1,0 +1,24 @@
+"use client";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Stepper } from "@/components/ui/stepper";
+import { Textarea } from "@/components/ui/textarea";
+import { apiData } from "@/lib/api/client";
+import { TIP_CATEGORIES, type TipCategory, type TipRow } from "@/types/database";
+import { tipNames } from "@/components/tips/tips-browser";
+type Draft={title:string;body:string;category:TipCategory;read_minutes:number};
+const empty:Draft={title:"",body:"",category:"alimentacao",read_minutes:2};
+export function TipsAdmin(){
+  const [tips,setTips]=useState<TipRow[]>([]);const [editing,setEditing]=useState<TipRow|null>();const [draft,setDraft]=useState<Draft>(empty);const [confirmDelete,setConfirmDelete]=useState(false);const [busy,setBusy]=useState(false);const [error,setError]=useState("");
+  useEffect(()=>{void apiData<TipRow[]>("/api/tips").then(setTips).catch(()=>setError("Não foi possível carregar as dicas."));},[]);
+  function open(tip?:TipRow){setEditing(tip??null);setDraft(tip?{title:tip.title,body:tip.body,category:tip.category,read_minutes:tip.read_minutes}:empty);setError("");}
+  async function save(published=true){setBusy(true);setError("");try{const row=await apiData<TipRow>(editing?`/api/admin/tips/${editing.id}`:"/api/admin/tips",{method:editing?"PATCH":"POST",json:{...draft,is_published:published}});setTips(v=>published?[row,...v.filter(t=>t.id!==row.id)]:v.filter(t=>t.id!==row.id));setEditing(undefined);}catch(e){setError(e instanceof Error?e.message:"Não foi possível salvar a dica.");}finally{setBusy(false);}}
+  async function remove(){if(!editing)return;setBusy(true);try{await apiData(`/api/admin/tips/${editing.id}`,{method:"DELETE"});setTips(v=>v.filter(t=>t.id!==editing.id));setEditing(undefined);setConfirmDelete(false);}catch(e){setError(e instanceof Error?e.message:"Não foi possível excluir.");}finally{setBusy(false);}}
+  return <section className="rounded-2xl border border-white/10 bg-white/10 p-5"><div className="flex items-center justify-between gap-3"><div><h2 className="font-bold">Dicas / mentoria</h2><p className="mt-1 text-sm text-zinc-300">Publique conteúdo curto e útil.</p></div><Button className="h-11" onClick={()=>open()}>Criar dica</Button></div>{tips.map(t=><button key={t.id} onClick={()=>open(t)} className="mt-3 block min-h-11 w-full rounded-xl border border-white/10 p-3 text-left text-sm"><strong>{t.title}</strong><span className="ml-2 text-zinc-300">{tipNames[t.category]} · {t.read_minutes} min</span></button>)}
+    <Sheet open={editing!==undefined} onOpenChange={v=>{if(!v)setEditing(undefined);}}><SheetContent side="bottom" className="max-h-[94dvh] overflow-y-auto rounded-t-3xl border-white/10 bg-zinc-950 p-5 sm:left-1/2 sm:max-w-xl sm:-translate-x-1/2"><SheetHeader className="px-0"><SheetTitle>{editing?"Editar dica":"Nova dica"}</SheetTitle></SheetHeader><Label htmlFor="tip-title">Título</Label><Input id="tip-title" value={draft.title} onChange={e=>setDraft(v=>({...v,title:e.target.value}))}/><Label htmlFor="tip-body">Texto</Label><Textarea id="tip-body" rows={8} value={draft.body} onChange={e=>setDraft(v=>({...v,body:e.target.value}))}/><Label htmlFor="tip-category">Categoria</Label><select id="tip-category" className="min-h-11 rounded-xl border border-white/15 bg-zinc-900 px-3" value={draft.category} onChange={e=>setDraft(v=>({...v,category:e.target.value as TipCategory}))}>{TIP_CATEGORIES.map(c=><option key={c} value={c}>{tipNames[c]}</option>)}</select><Stepper label="Minutos de leitura" value={draft.read_minutes} onChange={n=>setDraft(v=>({...v,read_minutes:n}))} step={1} min={1} max={60}/>{error?<p role="alert" className="text-sm text-rose-200">{error}</p>:null}<SheetFooter className="px-0"><Button disabled={busy} className="h-11 bg-success-500 text-zinc-950" onClick={()=>void save()}>Publicar dica</Button>{editing?<><Button variant="outline" className="h-11" disabled={busy} onClick={()=>void save(false)}>Despublicar</Button><Button variant="destructive" className="h-11" onClick={()=>setConfirmDelete(true)}>Excluir dica</Button></>:null}</SheetFooter></SheetContent></Sheet>
+    <Sheet open={confirmDelete} onOpenChange={setConfirmDelete}><SheetContent side="bottom" className="rounded-t-3xl bg-zinc-950 p-5"><SheetHeader className="px-0"><SheetTitle>Excluir esta dica?</SheetTitle></SheetHeader><SheetFooter className="px-0"><Button variant="outline" onClick={()=>setConfirmDelete(false)}>Cancelar</Button><Button variant="destructive" disabled={busy} onClick={()=>void remove()}>Excluir definitivamente</Button></SheetFooter></SheetContent></Sheet>
+  </section>;
+}

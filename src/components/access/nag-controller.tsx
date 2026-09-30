@@ -57,24 +57,24 @@ export function NagController({ userId }: { userId: string }) {
   return (
     <>
       {!blocking ? (
-        <div className={`fixed inset-x-0 top-0 z-40 flex min-h-12 items-center justify-center gap-2 border-b px-3 py-2 text-center text-xs font-semibold backdrop-blur-xl md:left-64 ${urgent ? "border-red-400/30 bg-red-950/85 text-red-100" : "border-brand-400/20 bg-brand-900/85 text-purple-100"}`} style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top))" }} role="status">
+        <div className={`fixed inset-x-0 top-0 z-40 flex min-h-12 items-center justify-center gap-2 border-b px-3 py-2 text-center text-xs font-semibold backdrop-blur-xl md:left-64 ${urgent ? "border-warning-400/30 bg-amber-950/85 text-amber-100" : "border-warning-400/20 bg-amber-950/85 text-amber-100"}`} style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top))" }} role="status">
           <Clock3 className="size-4 shrink-0" aria-hidden />
           Seu teste termina em {label}.
-          <Link href="/assinar" className="underline underline-offset-2 focus-visible:outline focus-visible:outline-2">Assinar</Link>
+          <Link href="/assinar" className="inline-flex min-h-11 items-center rounded-xl border border-amber-300/30 bg-amber-400/15 px-3 text-sm focus-visible:outline focus-visible:outline-2">Assinar</Link>
         </div>
       ) : null}
 
       <Dialog open={blocking || softOpen} onOpenChange={blocking ? undefined : setSoftOpen}>
-        <DialogContent showCloseButton={!blocking} onEscapeKeyDown={blocking ? (event) => event.preventDefault() : undefined} onPointerDownOutside={blocking ? (event) => event.preventDefault() : undefined} className={`border bg-zinc-950/95 p-6 backdrop-blur-xl ${urgent || blocking ? "border-red-400/30 shadow-[0_0_50px_rgb(239_68_68/0.14)]" : "border-brand-400/20 shadow-[var(--shadow-glow)]"}`}>
+        <DialogContent showCloseButton={!blocking} onEscapeKeyDown={blocking ? (event) => event.preventDefault() : undefined} onPointerDownOutside={blocking ? (event) => event.preventDefault() : undefined} className={`border bg-zinc-950/95 p-6 backdrop-blur-xl ${blocking ? "border-danger-400/30" : "border-warning-400/20"}`}>
           <DialogHeader>
-            <div className={`mb-2 flex size-12 items-center justify-center rounded-2xl ${urgent || blocking ? "bg-red-500/15 text-red-300" : "bg-brand-500/15 text-brand-400"}`}>
+            <div className={`mb-2 flex size-12 items-center justify-center rounded-2xl ${blocking ? "bg-danger-500/15 text-rose-300" : "bg-warning-500/15 text-amber-300"}`}>
               {urgent || blocking ? <AlertTriangle aria-hidden /> : <Sparkles aria-hidden />}
             </div>
             <DialogTitle className="text-xl">{blocking ? "Seu acesso precisa ser renovado" : urgent ? "Últimas horas do seu teste" : "Continue construindo sua rotina"}</DialogTitle>
             <DialogDescription className="leading-relaxed">{blocking ? "Assine para voltar a registrar refeições, água, peso e acompanhar sua evolução." : `Você ainda tem ${label} para experimentar todos os recursos do Life OS.`}</DialogDescription>
           </DialogHeader>
-          <DialogFooter className="mt-2 border-white/10 bg-white/5">
-            <Button className="h-11 w-full shadow-[var(--shadow-glow)] sm:w-auto" onClick={() => router.replace("/assinar")}>Ver assinatura</Button>
+          <DialogFooter className="sticky bottom-0 mt-2 border-t border-white/10 bg-zinc-950 pt-3">
+            <Button className="h-12 w-full bg-success-500 font-bold text-zinc-950 hover:bg-success-500/85 sm:w-auto" onClick={() => router.replace("/assinar")}>Ver assinatura</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

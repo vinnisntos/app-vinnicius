@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, LoaderCircle, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BottomActionBar } from "@/components/ui/bottom-action-bar";
 import { ApiClientError, apiData } from "@/lib/api/client";
 import type { CheckoutRequest, CheckoutResponse, PublicSettings } from "@/types/database";
 
@@ -62,10 +63,10 @@ export function CheckoutButton({ revoked = false }: { revoked?: boolean }) {
   return (
     <div className="space-y-3">
       {cpfRequired && !revoked ? <div className="space-y-2"><label htmlFor="checkout-cpf" className="text-sm font-medium">CPF</label><input id="checkout-cpf" inputMode="numeric" autoComplete="off" value={cpf} onChange={(event) => { const digits = event.target.value.replace(/\D/g, "").slice(0, 11); setCpf(digits.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2")); setCpfErrors([]); }} className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-3 outline-none focus-visible:ring-2 focus-visible:ring-brand-500" placeholder="000.000.000-00" aria-invalid={!!cpfErrors.length} />{cpfErrors.map((message) => <p key={message} className="text-xs text-red-300">{message}</p>)}<p className="text-xs leading-relaxed text-zinc-400">O CPF vai direto para o processador de pagamento e não fica salvo no app.</p></div> : null}
-      {!revoked ? <Button type="button" onClick={checkout} disabled={pending} className="h-12 w-full rounded-xl text-base shadow-[var(--shadow-glow)]">
+      {!revoked ? <BottomActionBar className="md:w-full"><Button data-primary-action="subscribe" type="button" onClick={checkout} disabled={pending} className="h-12 w-full rounded-xl bg-success-500 text-base font-bold text-zinc-950 hover:bg-success-500/85">
         {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : <ArrowRight aria-hidden />}
         {pending ? "Abrindo pagamento…" : cpfRequired ? "Continuar para o pagamento" : "Assinar agora"}
-      </Button> : null}
+      </Button></BottomActionBar> : null}
       {error ? <p role="alert" className="rounded-xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-200">{error}</p> : null}
       {supportUrl ? (
         <Button asChild variant="outline" className="h-11 w-full rounded-xl">
