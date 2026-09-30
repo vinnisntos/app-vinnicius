@@ -21,7 +21,7 @@ export function KanbanSummaryCard({
     <Link href="/estudos-trabalhos">
       <Card className="h-full transition-colors duration-150 hover:ring-brand-500/30">
         <CardHeader className="flex-row items-center gap-3 space-y-0">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-brand-600/10 text-brand-400">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand-strong">
             <SquareKanban className="size-4" aria-hidden />
           </div>
           <p className="text-sm font-semibold">Estudos e Trabalhos</p>
@@ -39,8 +39,8 @@ export function KanbanSummaryCard({
                     variant="outline"
                     className={
                       isOverdue(card.dueDate, card.completedAt, todayIso)
-                        ? "border-danger-500/30 text-red-400"
-                        : "border-brand-500/30 text-brand-400"
+                        ? "border-danger-500/30 text-danger"
+                        : "border-brand-500/30 text-brand-strong"
                     }
                   >
                     {isOverdue(card.dueDate, card.completedAt, todayIso)

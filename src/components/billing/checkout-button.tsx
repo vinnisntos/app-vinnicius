@@ -62,12 +62,12 @@ export function CheckoutButton({ revoked = false }: { revoked?: boolean }) {
 
   return (
     <div className="space-y-3">
-      {cpfRequired && !revoked ? <div className="space-y-2"><label htmlFor="checkout-cpf" className="text-sm font-medium">CPF</label><input id="checkout-cpf" inputMode="numeric" autoComplete="off" value={cpf} onChange={(event) => { const digits = event.target.value.replace(/\D/g, "").slice(0, 11); setCpf(digits.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2")); setCpfErrors([]); }} className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-3 outline-none focus-visible:ring-2 focus-visible:ring-brand-500" placeholder="000.000.000-00" aria-invalid={!!cpfErrors.length} />{cpfErrors.map((message) => <p key={message} className="text-xs text-red-300">{message}</p>)}<p className="text-xs leading-relaxed text-zinc-400">O CPF vai direto para o processador de pagamento e não fica salvo no app.</p></div> : null}
-      {!revoked ? <BottomActionBar className="md:w-full"><Button data-primary-action="subscribe" type="button" onClick={checkout} disabled={pending} className="h-12 w-full rounded-xl bg-success-500 text-base font-bold text-zinc-950 hover:bg-success-500/85">
+      {cpfRequired && !revoked ? <div className="space-y-2"><label htmlFor="checkout-cpf" className="text-sm font-medium">CPF</label><input id="checkout-cpf" inputMode="numeric" autoComplete="off" value={cpf} onChange={(event) => { const digits = event.target.value.replace(/\D/g, "").slice(0, 11); setCpf(digits.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2")); setCpfErrors([]); }} className="h-12 w-full rounded-xl border border-glass-border bg-glass px-3 outline-none focus-visible:ring-2 focus-visible:ring-brand-500" placeholder="000.000.000-00" aria-invalid={!!cpfErrors.length} />{cpfErrors.map((message) => <p key={message} className="text-xs text-danger">{message}</p>)}<p className="text-xs leading-relaxed text-text-tertiary">O CPF vai direto para o processador de pagamento e não fica salvo no app.</p></div> : null}
+      {!revoked ? <BottomActionBar className="md:w-full"><Button data-primary-action="subscribe" type="button" onClick={checkout} disabled={pending} className="h-12 w-full rounded-xl bg-success-500 text-base font-bold text-on-bright hover:bg-success-500/85">
         {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : <ArrowRight aria-hidden />}
         {pending ? "Abrindo pagamento…" : cpfRequired ? "Continuar para o pagamento" : "Assinar agora"}
       </Button></BottomActionBar> : null}
-      {error ? <p role="alert" className="rounded-xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-200">{error}</p> : null}
+      {error ? <p role="alert" className="rounded-xl border border-danger bg-danger-soft p-3 text-sm text-danger">{error}</p> : null}
       {supportUrl ? (
         <Button asChild variant="outline" className="h-11 w-full rounded-xl">
           <a href={supportUrl} target="_blank" rel="noreferrer"><MessageCircle aria-hidden /> Falar com o suporte</a>

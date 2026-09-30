@@ -11,9 +11,9 @@ export function ModulePlaceholder({
   description: string;
 }) {
   return (
-    <Card className="border-white/10 bg-white/5">
+    <Card className="border-glass-border bg-glass">
       <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-        <div className="flex size-12 items-center justify-center rounded-full bg-brand-600/10 text-brand-400">
+        <div className="flex size-12 items-center justify-center rounded-full bg-brand-soft text-brand-strong">
           <Icon className="size-6" aria-hidden />
         </div>
         <h2 className="text-lg font-semibold">{title}</h2>

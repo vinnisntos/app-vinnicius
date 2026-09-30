@@ -8,7 +8,7 @@ export function SignOutButton() {
       <Button
         type="submit"
         variant="ghost"
-        className="w-full justify-start gap-3 text-gray-400 hover:text-foreground"
+        className="w-full justify-start gap-3 text-text-tertiary hover:text-foreground"
       >
         <LogOut className="size-4" aria-hidden />
         Sair

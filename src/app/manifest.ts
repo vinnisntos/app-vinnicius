@@ -12,8 +12,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: APP_CONFIG.backgroundColor,
-    theme_color: APP_CONFIG.backgroundColor,
+    background_color: APP_CONFIG.lightBackgroundColor,
+    theme_color: APP_CONFIG.brandColor,
     categories: ["health", "fitness", "lifestyle"],
     icons: PWA_ICON_SIZES.flatMap((size) => [
       { src: `/pwa-icon/${size}`, sizes: `${size}x${size}`, type: "image/png", purpose: "any" as const },

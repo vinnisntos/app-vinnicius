@@ -27,25 +27,25 @@ export default async function SubscribePage() {
   const revoked = access.access_state === "revoked";
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,rgba(147,51,234,0.24),transparent_38%)] px-4 py-8 [padding-top:max(2rem,env(safe-area-inset-top))] [padding-bottom:max(12rem,env(safe-area-inset-bottom))]">
+    <main className="relative min-h-screen overflow-hidden app-ambient px-4 py-8 [padding-top:max(2rem,env(safe-area-inset-top))] [padding-bottom:max(12rem,env(safe-area-inset-bottom))]">
       <div className="mx-auto w-full max-w-lg">
-        <div className="mb-8 flex items-center justify-between"><Logo /><form action={signOut}><Button variant="ghost" className="h-11 text-zinc-400"><LogOut aria-hidden /> Sair</Button></form></div>
-        <section className="rounded-3xl border border-white/10 bg-white/10 p-6 shadow-2xl backdrop-blur-md sm:p-8">
-          <div className={`mb-5 flex size-14 items-center justify-center rounded-2xl ${active ? "bg-success-500/15 text-emerald-300" : trial ? "bg-warning-500/15 text-amber-300" : "bg-danger-500/15 text-rose-300"}`}>{active ? <ShieldCheck aria-hidden /> : <Sparkles aria-hidden />}</div>
+        <div className="mb-8 flex items-center justify-between"><Logo /><form action={signOut}><Button variant="ghost" className="h-11 text-text-tertiary"><LogOut aria-hidden /> Sair</Button></form></div>
+        <section className="rounded-3xl border border-glass-border bg-glass p-6 shadow-2xl backdrop-blur-md sm:p-8">
+          <div className={`mb-5 flex size-14 items-center justify-center rounded-2xl ${active ? "bg-success-500/15 text-success" : trial ? "bg-warning-500/15 text-warning" : "bg-danger-500/15 text-danger"}`}>{active ? <ShieldCheck aria-hidden /> : <Sparkles aria-hidden />}</div>
           {active ? (
             <>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-300">Tudo certo</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-strong">Tudo certo</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight">Sua assinatura está ativa</h1>
-              <p className="mt-3 text-sm leading-relaxed text-zinc-300">Você tem acesso completo ao Life OS e pode continuar cuidando da sua rotina.</p>
+              <p className="mt-3 text-sm leading-relaxed text-text-secondary">Você tem acesso completo ao Life OS e pode continuar cuidando da sua rotina.</p>
               <Button asChild className="mt-8 h-12 w-full"><Link href="/"><ChevronLeft aria-hidden /> Voltar ao app</Link></Button>
             </>
           ) : (
             <>
-              <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${trial ? "text-amber-300" : "text-rose-300"}`}>{revoked ? "Acesso suspenso" : trial ? `Faltam ${trialLabel(access.trial_ends_at, access.server_now)}` : `Seu teste de ${settings?.trialDays ?? 3} dias terminou`}</p>
+              <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${trial ? "text-warning" : "text-danger"}`}>{revoked ? "Acesso suspenso" : trial ? `Faltam ${trialLabel(access.trial_ends_at, access.server_now)}` : `Seu teste de ${settings?.trialDays ?? 3} dias terminou`}</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight">{revoked ? "Seu acesso foi suspenso pela administração" : "Sua evolução não precisa parar aqui."}</h1>
-              <p className="mt-3 text-sm leading-relaxed text-zinc-300">{revoked ? "Fale com o suporte para entender o motivo e regularizar sua conta." : trial ? "Garanta seu acesso antes do fim do período gratuito." : "Assine para retomar seus registros e acompanhar sua evolução sem perder o ritmo."}</p>
-              <ul className="my-7 space-y-3 text-sm text-zinc-200">
-                {["Alimentação, hidratação e metas personalizadas", "Acompanhamento de medicação e progresso", "Treinos prontos para diferentes objetivos", "Comunidade para compartilhar conquistas", "Lembretes no Google Agenda"].map((benefit) => <li key={benefit} className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300"><Check className="size-4" aria-hidden /></span>{benefit}</li>)}
+              <p className="mt-3 text-sm leading-relaxed text-text-secondary">{revoked ? "Fale com o suporte para entender o motivo e regularizar sua conta." : trial ? "Garanta seu acesso antes do fim do período gratuito." : "Assine para retomar seus registros e acompanhar sua evolução sem perder o ritmo."}</p>
+              <ul className="my-7 space-y-3 text-sm text-foreground">
+                {["Alimentação, hidratação e metas personalizadas", "Acompanhamento de medicação e progresso", "Treinos prontos para diferentes objetivos", "Comunidade para compartilhar conquistas", "Lembretes no Google Agenda"].map((benefit) => <li key={benefit} className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success-soft text-success"><Check className="size-4" aria-hidden /></span>{benefit}</li>)}
               </ul>
             </>
           )}

@@ -21,8 +21,8 @@ const CATEGORY_LABELS: Record<CardCategory, string> = {
 
 const CATEGORY_CLASSES: Record<CardCategory, string> = {
   faculdade: "border-blue-400/30 text-blue-400",
-  estagio: "border-brand-500/30 text-brand-400",
-  projeto_pessoal: "border-success-500/30 text-success-500",
+  estagio: "border-brand-500/30 text-brand-strong",
+  projeto_pessoal: "border-success-500/30 text-success",
 };
 
 const PRIORITY_LABELS: Record<CardPriority, string> = {
@@ -32,9 +32,9 @@ const PRIORITY_LABELS: Record<CardPriority, string> = {
 };
 
 const PRIORITY_CLASSES: Record<CardPriority, string> = {
-  baixa: "border-white/10 text-muted-foreground",
-  media: "border-brand-500/30 text-brand-400",
-  alta: "border-danger-500/30 text-red-400",
+  baixa: "border-glass-border text-muted-foreground",
+  media: "border-brand-500/30 text-brand-strong",
+  alta: "border-danger-500/30 text-danger",
 };
 
 function formatDayMonth(iso: string) {
@@ -70,9 +70,9 @@ function CardContent({ card, todayIso }: { card: BoardCard; todayIso: string }) 
           className={cn(
             "font-mono text-xs",
             overdue
-              ? "text-danger-500"
+              ? "text-danger"
               : dueToday
-                ? "text-brand-400"
+                ? "text-brand-strong"
                 : "text-muted-foreground",
           )}
         >
@@ -99,7 +99,7 @@ export function KanbanCard({
 
   if (isOverlay) {
     return (
-      <div className="rounded-lg border border-white/10 bg-background p-3 shadow-lg">
+      <div className="rounded-lg border border-glass-border bg-background p-3 shadow-lg">
         <CardContent card={card} todayIso={todayIso} />
       </div>
     );
@@ -112,7 +112,7 @@ export function KanbanCard({
       {...attributes}
       {...listeners}
       className={cn(
-        "rounded-lg border border-white/10 bg-background p-3 touch-none",
+        "rounded-lg border border-glass-border bg-background p-3 touch-none",
         isDragging && "opacity-40",
       )}
     >

@@ -216,7 +216,7 @@ export function CardFormDialog({
           {error ? (
             <p
               role="alert"
-              className="rounded-sm border border-danger-500/30 bg-danger-500/5 px-3 py-2 text-sm text-red-400"
+              className="rounded-sm border border-danger-500/30 bg-danger-500/5 px-3 py-2 text-sm text-danger"
             >
               {error}
             </p>

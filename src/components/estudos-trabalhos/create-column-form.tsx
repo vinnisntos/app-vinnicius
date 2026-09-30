@@ -38,7 +38,7 @@ export function CreateColumnForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex w-72 shrink-0 flex-col gap-2 rounded-xl border border-white/10 bg-white/5 p-3"
+      className="flex w-72 shrink-0 flex-col gap-2 rounded-xl border border-glass-border bg-glass p-3"
     >
       <Input
         autoFocus

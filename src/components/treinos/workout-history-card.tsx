@@ -26,7 +26,7 @@ export function WorkoutHistoryCard({
             {history.map((entry) => (
               <li
                 key={entry.id}
-                className="flex justify-between border-b border-white/5 pb-2 last:border-0 last:pb-0"
+                className="flex justify-between border-b border-glass-border pb-2 last:border-0 last:pb-0"
               >
                 <span>
                   {formatDate(entry.performedAt)} — Treino {entry.dayLabel}

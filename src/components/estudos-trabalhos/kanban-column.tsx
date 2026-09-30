@@ -55,7 +55,7 @@ export function KanbanColumn({
   const sortedCards = column.cards.slice().sort((a, b) => a.orderIndex - b.orderIndex);
 
   return (
-    <div className="flex w-72 shrink-0 flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+    <div className="flex w-72 shrink-0 flex-col gap-3 rounded-xl border border-glass-border bg-glass p-3">
       <div className="flex items-center justify-between gap-2">
         {isEditingName ? (
           <Input
@@ -72,7 +72,7 @@ export function KanbanColumn({
           <button
             type="button"
             onClick={() => setIsEditingName(true)}
-            className="truncate text-sm font-semibold hover:text-brand-400"
+            className="truncate text-sm font-semibold hover:text-brand-strong"
           >
             {column.name}
           </button>

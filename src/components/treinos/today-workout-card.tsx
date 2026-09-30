@@ -51,7 +51,7 @@ function ExerciseSetRows({
   }
 
   return (
-    <div className="rounded-lg border border-white/10 p-3">
+    <div className="rounded-lg border border-glass-border p-3">
       <div className="mb-2 flex items-baseline justify-between">
         <p className="text-sm font-medium">{exercise.name}</p>
         <p className="text-xs text-muted-foreground">

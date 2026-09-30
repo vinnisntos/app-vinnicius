@@ -29,7 +29,7 @@ export default async function TreinosPage() {
         <h1 className="text-2xl font-bold tracking-tighter">Treinos</h1>
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-            <div className="flex size-12 items-center justify-center rounded-full bg-brand-600/10 text-brand-400">
+            <div className="flex size-12 items-center justify-center rounded-full bg-brand-soft text-brand-strong">
               <Dumbbell className="size-6" aria-hidden />
             </div>
             <h2 className="text-lg font-semibold">Crie seu plano de treino</h2>

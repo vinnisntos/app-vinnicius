@@ -25,8 +25,8 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150",
               isActive
-                ? "bg-brand-600/10 text-brand-400 border border-brand-500/20"
-                : "text-gray-400 hover:bg-white/5 hover:text-foreground border border-transparent",
+                ? "bg-brand-soft text-brand-strong border border-brand-500/20"
+                : "text-text-tertiary hover:bg-glass hover:text-foreground border border-transparent",
             )}
           >
             <item.icon className="size-4 shrink-0" aria-hidden />
