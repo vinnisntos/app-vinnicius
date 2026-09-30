@@ -22,21 +22,21 @@ complementa o MVP existente.
 |---|---|---|
 | 1 | Tenant simples por usuário; papéis `master` e `user` | ✅ |
 | 2 | Painel do administrador (herdeiro do Financeiro): ver/gerir assinaturas, liberar/remover | ✅ `/admin` |
-| 3 | Mobile first, PWA com atalho na tela inicial | ✅ PWA · 🔄 UX Fase 7 |
-| 4 | UI/UX fluida, limpa, no padrão de mercado; responsiva e agradável | 🔄 Fase 7 |
-| 5 | Alimentação: dados consistentes, métricas inteligentes, kcal/macros recomendados, persistência local (offline), baixo atrito | ✅ métricas · ⚠️ entrada ainda digitada → catálogo de alimentos |
+| 3 | Mobile first, PWA com atalho na tela inicial | ✅ PWA e aceite mobile h2/h3 |
+| 4 | UI/UX fluida, limpa, no padrão de mercado; responsiva e agradável | ✅ UX Fases 7–10, aceite mobile h2/h3 |
+| 5 | Alimentação: dados consistentes, métricas inteligentes, kcal/macros recomendados, persistência local (offline), baixo atrito | ✅ catálogo, entrada rápida, métricas e filas offline por usuário |
 | 6 | Água por dia, como hoje | ✅ |
-| 7 | Ícone `?` em TODAS as partes explicando o uso correto | ✅ onde existe tela · verificar módulos novos |
+| 7 | Ícone `?` em TODAS as partes explicando o uso correto | ✅ ajuda contextual nos módulos novos e nos fluxos críticos |
 | 8 | Hub comunitário (rede social), postar a refeição ao marcá-la | ✅ |
 | 9 | Notificações para quando o usuário está fora do app | ✅ Google Agenda · proposta: Web Push gratuito |
-| 10 | FAQ do básico ao complexo, sem suporte humano; fallback WhatsApp do dono | ✅ estrutura · ❌ conteúdo |
-| 11 | Google Agenda para lembrar treinos, sem custo | ✅ (falta configurar credenciais) |
+| 10 | FAQ do básico ao complexo, sem suporte humano; fallback WhatsApp do dono | ✅ 23 respostas semente e WhatsApp configurável pelo master |
+| 11 | Google Agenda para lembrar treinos, sem custo | ✅ integração pronta; ativação externa no checklist de go-live |
 | 12 | E-mail precisa de `@`; celular só catálogo | ✅ |
 | 13 | 3 dias grátis; pode assinar antes; "poluição visual" até assinar | ✅ |
-| 14 | **Peptídeos/medicamentos hormonais**: registro de doses, agenda de aplicação, rodízio de local, efeitos colaterais | ❌ |
-| 15 | **Documentação da progressão**: peso, medidas corporais, linha do tempo | ⚠️ só peso |
-| 16 | **Treinos prontos**: academia, corrida, ganho de massa, perda de peso, casa | ❌ |
-| 17 | **Mentoria/dicas**: conteúdo curado pelo master | ❌ |
+| 14 | **Peptídeos/medicamentos hormonais**: registro de doses, agenda de aplicação, rodízio de local, efeitos colaterais | ✅ módulo Saúde; somente dose prescrita |
+| 15 | **Documentação da progressão**: peso, medidas corporais, linha do tempo | ✅ peso, medidas e evolução temporal |
+| 16 | **Treinos prontos**: academia, corrida, ganho de massa, perda de peso, casa | ✅ catálogo e execução de programas |
+| 17 | **Mentoria/dicas**: conteúdo curado pelo master | ✅ publicação, rascunho, edição e leitura |
 
 ## Regras de segurança do domínio (não negociáveis)
 

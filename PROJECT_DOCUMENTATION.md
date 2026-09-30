@@ -417,16 +417,16 @@ As migrations 0003 e 0004 **já estão aplicadas** no Supabase de produção.
 São aditivas e compatíveis com a versão do app hoje no ar (que fala com o
 banco via Drizzle e não depende das policies alteradas).
 
-### Pendências conhecidas (fora do escopo destas fases)
+### Fechamento da Fase 10
 
-- `seed_user_defaults` ainda cria colunas de Kanban e categorias do
-  Financeiro para cada novo assinante (módulos legados, só master os vê).
-- O Dashboard `/` ainda usa os cards legados (treino/nutrição via Server
-  Actions); não foi redesenhado.
-- Webhook do Asaas não ordena eventos fora de ordem por `dateCreated`
-  (o Asaas entrega em ordem na prática; `revoked` é sempre preservado).
-- Tracking de peptídeos, citado no briefing de contexto, não fazia parte
-  das fases definidas e não foi modelado.
+- `0008_master_legacy_defaults.sql` restringe a semeadura legada ao master,
+  inclusive na promoção de perfil, sem apagar registros anteriores.
+- O Dashboard `/` usa `/api/dashboard/summary` e `/api/training/today` para
+  alimentação e treino; os cards legados sem uso foram removidos.
+- `0009_asaas_event_order.sql` grava a data do último evento aplicado; o
+  webhook ignora eventos mais antigos e preserva `revoked`.
+- O registro de medicação/peptídeos está no módulo Saúde, sem sugestão de dose.
+- Configuração e aceite de serviços externos: `docs/checklist-go-live.md`.
 
 ---
 
