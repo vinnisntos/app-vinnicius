@@ -511,3 +511,34 @@ vezes (idempotência) e checagem nutricional (kcal ≈ 4P + 4C + 9G — só a
 cerveja diverge, pelo álcool, como esperado); 46 asserções E2E contra o
 Supabase real (inclusive paywall 402 em todos os módulos novos e limpeza
 completa dos usuários de teste).
+
+---
+
+## Fase 11 — Site institucional, tema claro/escuro, remoção do Financeiro
+
+- **Site** em `/site`, servido na raiz `/` para visitantes sem sessão (rewrite
+  no proxy; logado, `/` continua sendo o Dashboard). Páginas `/termos` e
+  `/privacidade` (texto-modelo: **revisar antes de divulgar**). SEO: só as
+  páginas públicas são indexáveis (`robots.txt` com `Allow: /$`), sitemap e
+  canonical apontam para a raiz. Regras de conteúdo: sem marcas de
+  medicamento, sem promessa de resultado, aviso médico no rodapé.
+- **Tema** claro, escuro ou sistema (padrão), cookie `theme`, sem flash (classe
+  aplicada no servidor + script com nonce da CSP). Cores só por tokens
+  semânticos em `globals.css`.
+- **Financeiro removido** do código. Tabelas e dados **preservados** no banco;
+  a migration `0010` só deixa de semeá-los.
+
+## Fase 12 — Autoatendimento
+
+| Recurso | Onde |
+|---|---|
+| Assistente de boas-vindas (primeiro acesso, pulável e retomável) | `/boas-vindas` — o layout redireciona quando `onboarding_completed_at` é nulo |
+| Sons (Web Audio sintetizado) e vibração (Android) com preferência por usuário | `src/lib/feedback/`, `PreferencesProvider`; toda escrita da API dispara "sucesso"/"erro"; metas disparam "conquista" |
+| Minha conta: dados, tema, sons/vibração, senha | `/conta` |
+| Cancelar assinatura | `POST /api/billing/cancel` — cancela no Asaas; acesso até `current_period_end` |
+| Trocar senha | `POST /api/me/password` — confere a senha atual |
+| Excluir conta (LGPD) | `DELETE /api/me` — "EXCLUIR" + senha; cancela Asaas, desconecta Google, apaga via Auth; master bloqueado |
+
+Migrations: `0011` (cancelamento no fim do período, preferências) e `0012`
+(FAQ de autoatendimento). Aceite: 125 checagens de zona do polegar nos dois
+temas (h2/h3/h4) e 17 asserções E2E de autoatendimento no Supabase real.
