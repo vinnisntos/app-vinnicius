@@ -27,6 +27,11 @@ export function enqueueMealItem(userId: string, entry: PendingMealItem) {
   }
 }
 
+export function clearPendingMealItemOperations(userId: string, id: string) {
+  const queue = readMealItemQueue(userId);
+  if (queue.some((entry) => entry.id === id)) write(userId, queue.filter((entry) => entry.id !== id));
+}
+
 export function overlayMealItems(items: MealLogItemRow[], queue: PendingMealItem[], date: string, slot: string) {
   const result = new Map(items.map((item) => [item.id, item]));
   for (const entry of queue) {
@@ -39,12 +44,21 @@ export function overlayMealItems(items: MealLogItemRow[], queue: PendingMealItem
 export const isMealItemNetworkFailure = (cause: unknown) => !(cause instanceof ApiClientError);
 
 type Response = { meal: MealLogRow; items: MealLogItemRow[] };
-let flushing = false;
-export async function flushMealItemQueue(userId: string): Promise<{ synced: number; discarded: number }> {
-  if (flushing) return { synced: 0, discarded: 0 };
-  flushing = true;
+type FlushResult = { synced: number; discarded: number };
+const activeFlushes = new Map<string, Promise<FlushResult>>();
+export async function waitForMealItemFlush(userId: string) { await activeFlushes.get(userId); }
+
+export function flushMealItemQueue(userId: string): Promise<FlushResult> {
+  const active = activeFlushes.get(userId);
+  if (active) return active;
+  const task = flush(userId);
+  activeFlushes.set(userId, task);
+  void task.finally(() => { if (activeFlushes.get(userId) === task) activeFlushes.delete(userId); }).catch(() => {});
+  return task;
+}
+
+async function flush(userId: string): Promise<FlushResult> {
   let synced = 0; let discarded = 0;
-  try {
     while (true) {
       const entry = readMealItemQueue(userId)[0];
       if (!entry) break;
@@ -63,5 +77,4 @@ export async function flushMealItemQueue(userId: string): Promise<{ synced: numb
       if (index >= 0) { queue.splice(index, 1); write(userId, queue); }
     }
     return { synced, discarded };
-  } finally { flushing = false; }
 }

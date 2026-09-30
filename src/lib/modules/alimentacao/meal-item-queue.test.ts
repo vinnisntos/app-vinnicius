@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiClientError, apiData } from "@/lib/api/client";
 import type { MealItemAdd, MealLogItemRow } from "@/types/database";
-import { enqueueMealItem, flushMealItemQueue, mealItemQueueKey, overlayMealItems, readMealItemQueue } from "./meal-item-queue";
+import { clearPendingMealItemOperations, enqueueMealItem, flushMealItemQueue, mealItemQueueKey, overlayMealItems, readMealItemQueue, waitForMealItemFlush } from "./meal-item-queue";
 
 vi.mock("@/lib/api/client", () => ({
   ApiClientError: class extends Error { constructor(public status: number, public code: string, message: string) { super(message); } },
@@ -33,6 +33,27 @@ describe("fila offline de itens", () => {
     expect(overlayMealItems([], [add], payload.log_date, payload.meal_slot)).toEqual([item]);
     expect(overlayMealItems([], [add, del], payload.log_date, payload.meal_slot)).toEqual([]);
     expect(overlayMealItems([], [add], "2026-09-28", payload.meal_slot)).toEqual([]);
+  });
+
+  it("limpa adição antiga após remoção confirmada", () => {
+    enqueueMealItem("alice", { op: "add", id, payload, item });
+    enqueueMealItem("alice", { op: "delete", id, log_date: payload.log_date, meal_slot: payload.meal_slot });
+    clearPendingMealItemOperations("alice", id);
+    expect(readMealItemQueue("alice")).toEqual([]);
+  });
+
+  it("aguarda um reenvio em andamento antes de remover", async () => {
+    enqueueMealItem("alice", { op: "add", id, payload, item });
+    let release = () => {};
+    vi.mocked(apiData).mockImplementationOnce(() => new Promise((resolve) => { release = () => resolve({} as never); }));
+    const flush = flushMealItemQueue("alice");
+    let waited = false;
+    const waiting = waitForMealItemFlush("alice").then(() => { waited = true; });
+    await Promise.resolve();
+    expect(waited).toBe(false);
+    release();
+    await Promise.all([flush, waiting]);
+    expect(waited).toBe(true);
   });
 
   it("reenvia com o mesmo id e preserva em falha de rede", async () => {
