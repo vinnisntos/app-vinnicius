@@ -1,4 +1,4 @@
-import { and, eq, isNull, ne, or, sql } from "drizzle-orm";
+import { and, eq, isNull, lte, ne, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { asaasWebhookEvents, subscriptions } from "@/lib/db/schema";
 import type { SubscriptionEffect } from "@/lib/integrations/asaas/events";
@@ -99,17 +99,20 @@ export async function findUserId(ref: {
  * - `revoked` é decisão do master e NUNCA é sobrescrita por webhook.
  * - efeitos negativos só na assinatura Asaas atual do usuário.
  * - pagamento confirmado grava o id da assinatura se ainda não havia.
+ * - o timestamp do Asaas impede que um evento antigo reverta o estado novo.
  * Retorna quantas linhas mudaram (0 = efeito não se aplicava).
  */
 export async function applyEffect(
   userId: string,
   effect: Extract<SubscriptionEffect, { kind: "set_status" }>,
   eventSubscriptionId: string | null,
+  eventCreatedAt: Date,
 ): Promise<number> {
   const rows = await db
     .update(subscriptions)
     .set({
       status: effect.status,
+      lastAsaasEventAt: eventCreatedAt,
       ...(effect.currentPeriodEnd && { currentPeriodEnd: new Date(effect.currentPeriodEnd) }),
       ...(effect.status === "active" &&
         eventSubscriptionId && {
@@ -120,6 +123,10 @@ export async function applyEffect(
       and(
         eq(subscriptions.userId, userId),
         ne(subscriptions.status, "revoked"),
+        or(isNull(subscriptions.lastAsaasEventAt), lte(subscriptions.lastAsaasEventAt, eventCreatedAt)),
+        !effect.requireCurrentSubscription && eventSubscriptionId
+          ? or(isNull(subscriptions.asaasSubscriptionId), eq(subscriptions.asaasSubscriptionId, eventSubscriptionId))
+          : undefined,
         effect.requireCurrentSubscription
           ? eventSubscriptionId
             ? eq(subscriptions.asaasSubscriptionId, eventSubscriptionId)

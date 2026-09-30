@@ -3,7 +3,7 @@ import { ApiHttpError } from "@/lib/api/handler";
 import { db } from "@/lib/db/client";
 import { getTodayIsoDate } from "@/lib/date";
 import { asaas, AsaasError, getAsaasPlan, isAsaasConfigured } from "@/lib/integrations/asaas/client";
-import { mapAsaasEvent, type AsaasWebhookPayload } from "@/lib/integrations/asaas/events";
+import { asaasEventTime, mapAsaasEvent, type AsaasWebhookPayload } from "@/lib/integrations/asaas/events";
 import { getAppSettings, getProfile } from "@/lib/modules/conta/repository";
 import type { CheckoutResponse } from "@/types/database";
 import * as repository from "./repository";
@@ -149,7 +149,8 @@ export async function processWebhook(payload: AsaasWebhookPayload): Promise<Webh
     return { status: "unmatched" };
   }
 
-  const changed = await repository.applyEffect(userId, effect, subscriptionId);
+    const eventCreatedAt = asaasEventTime(payload);
+    const changed = await repository.applyEffect(userId, effect, subscriptionId, eventCreatedAt);
   await repository.markEvent(payload.id, { userId, error: null });
   return { status: "applied", userId, changed };
 }

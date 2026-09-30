@@ -33,6 +33,11 @@ export const asaasWebhookSchema = z.object({
 });
 export type AsaasWebhookPayload = z.infer<typeof asaasWebhookSchema>;
 
+export function asaasEventTime(payload: AsaasWebhookPayload, receivedAt = new Date()): Date {
+  const parsed = payload.dateCreated ? new Date(payload.dateCreated) : null;
+  return parsed && !Number.isNaN(parsed.getTime()) ? parsed : receivedAt;
+}
+
 export type SubscriptionEffect =
   | { kind: "ignore"; reason: string }
   | {

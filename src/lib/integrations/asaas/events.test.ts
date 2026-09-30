@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addOneMonth, mapAsaasEvent, type AsaasWebhookPayload } from "./events";
+import { addOneMonth, asaasEventTime, mapAsaasEvent, type AsaasWebhookPayload } from "./events";
 
 const payment = { id: "pay_1", customer: "cus_1", subscription: "sub_1", dueDate: "2026-10-05" };
 const evt = (event: string, extra: Partial<AsaasWebhookPayload> = {}): AsaasWebhookPayload => ({
@@ -19,6 +19,12 @@ describe("addOneMonth", () => {
 });
 
 describe("mapAsaasEvent", () => {
+  it("usa dateCreated para ordenar eventos mesmo quando chegam invertidos", () => {
+    const newer = asaasEventTime(evt("PAYMENT_RECEIVED", { dateCreated: "2026-09-29T13:00:00-03:00" }));
+    const older = asaasEventTime(evt("PAYMENT_OVERDUE", { dateCreated: "2026-09-28T13:00:00-03:00" }));
+    expect(older.getTime()).toBeLessThan(newer.getTime());
+    expect(asaasEventTime(evt("PAYMENT_RECEIVED", { dateCreated: "inválido" }), newer)).toEqual(newer);
+  });
   it("pagamento confirmado/recebido → active com fim do período", () => {
     for (const e of ["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]) {
       expect(mapAsaasEvent(evt(e))).toEqual({
