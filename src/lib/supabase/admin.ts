@@ -22,6 +22,8 @@ export async function verifyPassword(email: string, password: string): Promise<b
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const { error } = await client.auth.signInWithPassword({ email, password });
-  if (!error) await client.auth.signOut();
+  // scope "local": encerra SÓ esta sessão temporária. O padrão ("global")
+  // derrubaria todas as sessões do usuário, inclusive a que está no app.
+  if (!error) await client.auth.signOut({ scope: "local" });
   return !error;
 }

@@ -1,17 +1,21 @@
 ﻿"use client";
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Droplet, LoaderCircle, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HelpHint } from "@/components/ui/help-hint";
 import { QuickChips } from "@/components/ui/quick-chips";
 import { Stepper } from "@/components/ui/stepper";
 import { apiData, newClientId } from "@/lib/api/client";
+import { emitFeedback } from "@/lib/feedback/sounds";
 import type { HelpTooltipMap, WaterLogInsert, WaterLogRow } from "@/types/database";
 export type WaterTrackerHandle = { add: (amount: number) => Promise<void> };
 const CARD_AMOUNTS = [150, 200, 300, 750].map((value) => ({ value, label: `+${value} ml` }));
 export const WaterTracker = forwardRef<WaterTrackerHandle, { initialLogs: WaterLogRow[]; goalMl: number; logDate: string; help?: Partial<HelpTooltipMap>; onToast?: (message: string) => void }>(function WaterTracker({ initialLogs, goalMl, logDate, help, onToast }, ref) {
   const [logs, setLogs] = useState(initialLogs); const [pending, setPending] = useState(false); const [error, setError] = useState<string>(); const [custom, setCustom] = useState(400);
   const total = useMemo(() => logs.reduce((sum, log) => sum + log.amount_ml, 0), [logs]); const progress = Math.min(100, Math.round((total / Math.max(goalMl, 1)) * 100)); const complete = total >= goalMl;
+  // Meta batida AGORA (não ao abrir a tela já completa) → som de conquista.
+  const wasComplete = useRef(complete);
+  useEffect(() => { if (complete && !wasComplete.current) emitFeedback("goal"); wasComplete.current = complete; }, [complete]);
   const add = useCallback(async (amount_ml: number) => { const payload: WaterLogInsert = { id: newClientId(), log_date: logDate, amount_ml }; const optimistic: WaterLogRow = { ...payload, user_id: "optimistic", logged_at: new Date().toISOString() }; setError(undefined); setLogs((current) => [...current, optimistic]); setPending(true); try { const saved = await apiData<WaterLogRow>("/api/nutrition/water", { method: "POST", json: payload }); setLogs((current) => current.map((item) => item.id === payload.id ? saved : item)); onToast?.(`${amount_ml} ml registrados`); } catch (cause) { setLogs((current) => current.filter((item) => item.id !== payload.id)); setError(cause instanceof Error ? cause.message : "Não foi possível registrar a água."); } finally { setPending(false); } }, [logDate, onToast]);
   useImperativeHandle(ref, () => ({ add }), [add]);
   async function undo() { const last = logs.at(-1); if (!last) return; setError(undefined); setLogs((current) => current.slice(0, -1)); setPending(true); try { await apiData<{ deleted: boolean }>(`/api/nutrition/water/${last.id}`, { method: "DELETE" }); } catch (cause) { setLogs((current) => [...current, last]); setError(cause instanceof Error ? cause.message : "Não foi possível desfazer."); } finally { setPending(false); } }

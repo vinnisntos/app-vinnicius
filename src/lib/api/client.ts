@@ -25,6 +25,18 @@ export function onAccessChange(listener: AccessListener) {
   return () => void accessListeners.delete(listener);
 }
 
+/**
+ * Resultado de escritas (POST/PUT/PATCH/DELETE) — usado pelo feedback de
+ * som/vibração sem acoplar cada tela a ele.
+ */
+type MutationListener = (result: { ok: boolean; method: string; path: string }) => void;
+const mutationListeners = new Set<MutationListener>();
+
+export function onMutationResult(listener: MutationListener) {
+  mutationListeners.add(listener);
+  return () => void mutationListeners.delete(listener);
+}
+
 export type ApiFetchInit = Omit<RequestInit, "body"> & { json?: unknown };
 
 export async function apiFetch<T>(path: `/api/${string}`, init: ApiFetchInit = {}): Promise<ApiEnvelope<T>> {
@@ -45,6 +57,7 @@ export async function apiFetch<T>(path: `/api/${string}`, init: ApiFetchInit = {
   if (!response.ok || !payload || "error" in payload) {
     const error = payload && "error" in payload ? payload.error : null;
     if (response.status === 402) accessListeners.forEach((l) => l(null, "paywall"));
+    notifyMutation(init.method, path, false);
     throw new ApiClientError(
       response.status,
       error?.code ?? "internal",
@@ -54,6 +67,7 @@ export async function apiFetch<T>(path: `/api/${string}`, init: ApiFetchInit = {
   }
 
   if (payload.access) accessListeners.forEach((l) => l(payload.access, "response"));
+  notifyMutation(init.method, path, true);
   return payload;
 }
 
@@ -64,3 +78,9 @@ export async function apiData<T>(path: `/api/${string}`, init?: ApiFetchInit): P
 
 /** UUID v4 gerado no cliente — chave de idempotência dos writes otimistas. */
 export const newClientId = () => crypto.randomUUID();
+
+function notifyMutation(method: string | undefined, path: string, ok: boolean) {
+  const m = (method ?? "GET").toUpperCase();
+  if (m === "GET" || m === "HEAD") return;
+  mutationListeners.forEach((l) => l({ ok, method: m, path }));
+}

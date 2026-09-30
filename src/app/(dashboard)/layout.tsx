@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import { AccessProvider } from "@/components/access/access-provider";
 import { AppShell } from "@/components/layout/app-shell";
+import { PreferencesProvider } from "@/components/preferences/preferences-provider";
 import { requireAppAccess } from "@/lib/access/status";
 import { requireUserId } from "@/lib/auth/session";
 import { getProfile } from "@/lib/modules/conta/repository";
@@ -23,9 +25,16 @@ export default async function DashboardLayout({
     getProfile(userId),
   ]);
 
+  // Primeiro acesso: assistente de boas-vindas antes do app.
+  if (profile && profile.onboardingCompletedAt === null) redirect("/boas-vindas");
+
   return (
     <AccessProvider initialAccess={access} role={(profile?.role ?? "user") as UserRole}>
-      <AppShell userId={userId}>{children}</AppShell>
+      <PreferencesProvider
+        initial={{ soundEnabled: profile?.soundEnabled ?? true, hapticsEnabled: profile?.hapticsEnabled ?? true }}
+      >
+        <AppShell userId={userId}>{children}</AppShell>
+      </PreferencesProvider>
     </AccessProvider>
   );
 }
