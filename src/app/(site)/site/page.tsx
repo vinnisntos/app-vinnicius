@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   title: "Impulso coletivo para emagrecer com constância",
   description,
   robots: { index: true, follow: true },
-  alternates: { canonical: `${APP_CONFIG.url}/site` },
+  alternates: { canonical: APP_CONFIG.url },
   openGraph: { title: `${APP_CONFIG.name} | Impulso coletivo para emagrecer com constância`, description, url: `${APP_CONFIG.url}/site`, siteName: APP_CONFIG.name, locale: "pt_BR", type: "website" },
 };
 
