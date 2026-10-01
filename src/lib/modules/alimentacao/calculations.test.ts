@@ -106,6 +106,13 @@ describe("calculateMacroTargets", () => {
   });
 });
 
+describe("proteína de quem usa medicação", () => {
+  it("1,8 g/kg mesmo com objetivo 'manter'", () => {
+    expect(calculateMacroTargets({ kcal: 2000, weightKg: 80, goal: "manter" }).protein_g).toBe(128);
+    expect(calculateMacroTargets({ kcal: 2000, weightKg: 80, goal: "manter", usesMedication: true }).protein_g).toBe(144);
+  });
+});
+
 describe("getIntakeGuidance", () => {
   const base = { usesMedication: true, sex: "F" as const, consumedKcal: 700, completedMeals: 2, isToday: true, nowTime: "19:30" };
 

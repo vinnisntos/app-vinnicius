@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { KeyRound, LoaderCircle, Palette, ShieldAlert, UserRound, Wallet } from "lucide-react";
+import { Download, FileHeart, KeyRound, LoaderCircle, Palette, ShieldAlert, UserRound, Wallet } from "lucide-react";
 import { useAccess } from "@/components/access/access-provider";
 import { usePreferences } from "@/components/preferences/preferences-provider";
 import { ThemeSelector } from "@/components/theme/theme-selector";
@@ -13,7 +13,24 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ApiClientError, apiData } from "@/lib/api/client";
 import { canVibrate } from "@/lib/feedback/sounds";
-import type { AccessState, CancelSubscriptionResponse, MeResponse, ProfileRow } from "@/types/database";
+import type { AccessState, BillingPlanId, CancelReason, CancelSubscriptionResponse, MedicationStatus, MeResponse, ProfileRow } from "@/types/database";
+
+const PLAN_LABEL: Record<BillingPlanId, string> = { mensal: "Plano mensal", anual: "Plano anual", fundador: "Plano fundador" };
+
+const MEDICATION_OPTIONS: { value: MedicationStatus; label: string }[] = [
+  { value: "usa", label: "Sim" },
+  { value: "vai_comecar", label: "Vou começar" },
+  { value: "nao_usa", label: "Não" },
+];
+
+const CANCEL_REASON_OPTIONS: { value: CancelReason; label: string }[] = [
+  { value: "preco", label: "Preço" },
+  { value: "nao_uso", label: "Não estou usando" },
+  { value: "faltou_recurso", label: "Faltou um recurso" },
+  { value: "parei_tratamento", label: "Parei o tratamento" },
+  { value: "problema_tecnico", label: "Problema técnico" },
+  { value: "outro", label: "Outro" },
+];
 
 const STATE_LABEL: Record<AccessState, string> = {
   master: "Administrador",
@@ -103,6 +120,9 @@ export function AccountSettings() {
   // Assinatura / exclusão
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelState, setCancelState] = useState<{ pending?: boolean; error?: string }>({});
+  const [cancelReason, setCancelReason] = useState<CancelReason>();
+  const [cancelNote, setCancelNote] = useState("");
+  const [medState, setMedState] = useState<{ pending?: boolean; message?: string }>({});
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [del, setDel] = useState({ confirm: "", password: "" });
   const [delState, setDelState] = useState<{ pending?: boolean; error?: string; fields?: Record<string, string[]> }>({});
@@ -164,10 +184,24 @@ export function AccountSettings() {
     }
   }
 
+  async function saveMedicationStatus(medication_status: MedicationStatus) {
+    setMedState({ pending: true });
+    try {
+      const profile = await apiData<ProfileRow>("/api/me", { method: "PATCH", json: { medication_status } });
+      setMe((current) => (current ? { ...current, profile } : current));
+      setMedState({ message: "Salvo." });
+    } catch (error) {
+      setMedState({ message: error instanceof Error ? error.message : "Erro ao salvar." });
+    }
+  }
+
   async function cancelSubscription() {
     setCancelState({ pending: true });
     try {
-      const result = await apiData<CancelSubscriptionResponse>("/api/billing/cancel", { method: "POST" });
+      const result = await apiData<CancelSubscriptionResponse>("/api/billing/cancel", {
+        method: "POST",
+        json: { ...(cancelReason && { reason: cancelReason }), ...(cancelNote.trim() && { note: cancelNote.trim() }) },
+      });
       setMe((current) =>
         current?.subscription ? { ...current, subscription: { ...current.subscription, cancel_requested_at: result.cancel_requested_at } } : current,
       );
@@ -200,7 +234,8 @@ export function AccountSettings() {
   }
 
   const sub = me.subscription;
-  const canCancel = access.access_state === "active" && !sub?.cancel_requested_at;
+  // Fundador é pagamento único: não há cobrança futura para cancelar.
+  const canCancel = access.access_state === "active" && !sub?.cancel_requested_at && sub?.auto_renew !== false;
   const isMaster = role === "master";
 
   return (
@@ -240,6 +275,36 @@ export function AccountSettings() {
         </div>
       </Section>
 
+      <Section icon={<FileHeart className="size-5" />} title="Tratamento e dados de saúde">
+        <fieldset disabled={medState.pending}>
+          <legend className="text-sm font-medium">Uso medicação para emagrecer prescrita pelo meu médico</legend>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {MEDICATION_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={me.profile.medication_status === option.value}
+                onClick={() => void saveMedicationStatus(option.value)}
+                className={`min-h-12 rounded-xl border px-2 text-sm font-semibold transition ${me.profile.medication_status === option.value ? "border-brand-strong bg-brand-soft text-brand-strong" : "border-glass-border bg-glass text-foreground"}`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        <p className="mt-2 text-sm text-text-secondary">Com “Sim”, sua meta em destaque passa a ser a proteína do dia. O app só registra: siga sempre a orientação do seu médico.</p>
+        {medState.message ? <p role="status" className="mt-1 text-sm text-text-secondary">{medState.message}</p> : null}
+        <p className="mt-4 text-sm text-text-secondary">
+          {me.profile.health_consent_at
+            ? `Você autorizou o uso dos seus dados de saúde em ${formatDate(me.profile.health_consent_at)}.`
+            : "Seus dados de saúde são usados apenas para o funcionamento do app."}{" "}
+          Para revogar, exclua sua conta abaixo.
+        </p>
+        <Button asChild variant="secondary" className="mt-3 h-12 w-full">
+          <a href="/api/me/export" download><Download aria-hidden /> Baixar meus dados</a>
+        </Button>
+      </Section>
+
       <Section icon={<Palette className="size-5" />} title="Preferências">
         <div className="space-y-2">
           <p className="text-sm font-medium">Tema</p>
@@ -277,7 +342,7 @@ export function AccountSettings() {
 
       {!isMaster ? (
         <Section icon={<Wallet className="size-5" />} title="Assinatura">
-          <p className="font-medium">{STATE_LABEL[access.access_state]}</p>
+          <p className="font-medium">{STATE_LABEL[access.access_state]}{access.access_state === "active" && sub?.plan ? ` · ${PLAN_LABEL[sub.plan]}` : ""}</p>
           {access.access_state === "trial" && access.trial_ends_at ? (
             <p className="mt-1 text-sm text-text-secondary">Teste grátis até {formatDate(access.trial_ends_at)}.</p>
           ) : null}
@@ -286,7 +351,7 @@ export function AccountSettings() {
               Assinatura cancelada — seu acesso continua {sub.current_period_end ? `até ${formatDate(sub.current_period_end)}` : "até o fim do período atual"}. Nenhuma nova cobrança será feita.
             </p>
           ) : sub?.current_period_end && access.access_state === "active" ? (
-            <p className="mt-1 text-sm text-text-secondary">Próxima renovação em {formatDate(sub.current_period_end)}.</p>
+            <p className="mt-1 text-sm text-text-secondary">{sub.auto_renew ? `Próxima renovação em ${formatDate(sub.current_period_end)}.` : `Não renova automaticamente — acesso até ${formatDate(sub.current_period_end)}.`}</p>
           ) : null}
           <div className="mt-4 grid gap-2">
             {access.access_state !== "active" ? (
@@ -312,7 +377,7 @@ export function AccountSettings() {
           <p className="text-sm">A conta de administrador não pode ser excluída por aqui, para o produto não ficar sem responsável.</p>
         ) : (
           <>
-            <p className="text-sm">Apaga definitivamente sua conta e todos os seus registros, cancela a assinatura e desconecta o Google Agenda. Não é possível desfazer.</p>
+            <p className="text-sm">Apaga definitivamente sua conta e todos os seus registros, cancela a assinatura e desconecta integrações. Não é possível desfazer.</p>
             <Button variant="destructive" className="mt-4 h-12 w-full" onClick={() => setDeleteOpen(true)}>
               Excluir minha conta
             </Button>
@@ -328,6 +393,33 @@ export function AccountSettings() {
               As cobranças param agora. Você continua com acesso {sub?.current_period_end ? `até ${formatDate(sub.current_period_end)}` : "até o fim do período já pago"}.
             </SheetDescription>
           </SheetHeader>
+          <div className="space-y-2">
+            <p className="text-sm font-medium">O que fez você cancelar? <span className="font-normal text-text-secondary">(opcional)</span></p>
+            <div className="flex flex-wrap gap-2">
+              {CANCEL_REASON_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={cancelReason === option.value}
+                  onClick={() => setCancelReason(cancelReason === option.value ? undefined : option.value)}
+                  className={`min-h-11 rounded-xl border px-4 text-sm font-semibold transition ${cancelReason === option.value ? "border-brand-strong bg-brand-soft text-brand-strong" : "border-glass-border bg-glass text-foreground"}`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            {cancelReason ? (
+              <textarea
+                aria-label="Quer contar mais? (opcional)"
+                placeholder="Quer contar mais? (opcional)"
+                maxLength={500}
+                rows={2}
+                value={cancelNote}
+                onChange={(e) => setCancelNote(e.target.value)}
+                className="w-full rounded-xl border border-glass-border bg-glass p-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              />
+            ) : null}
+          </div>
           {cancelState.error ? <p role="alert" className="text-sm text-danger">{cancelState.error}</p> : null}
           <SheetFooter className="grid gap-2 px-0">
             <Button variant="destructive" className="h-12" disabled={cancelState.pending} onClick={() => void cancelSubscription()}>

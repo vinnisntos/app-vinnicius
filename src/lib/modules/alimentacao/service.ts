@@ -68,6 +68,7 @@ export async function getNutritionDay(userId: string, date: string): Promise<Nut
       kcal: recommended,
       weightKg: Number(latestWeight.weightKg),
       goal,
+      usesMedication,
     });
 
     metrics = {

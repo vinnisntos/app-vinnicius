@@ -142,6 +142,11 @@ export async function startCheckout(userId: string, input: CheckoutInput): Promi
         // assinaturas cobrando a mesma pessoa.
         await asaas.cancelSubscription(sub.asaasSubscriptionId).catch(() => undefined);
       }
+      if (sub.asaasPendingPaymentId) {
+        // Desistiu do fundador antes de pagar: remove o Pix em aberto para
+        // ele não ser pago depois, por engano, junto com a assinatura.
+        await asaas.deletePayment(sub.asaasPendingPaymentId).catch(() => undefined);
+      }
       const subscription = await asaas.createSubscription({
         customer: sub.asaasCustomerId,
         billingType: "UNDEFINED",
@@ -199,6 +204,12 @@ export async function processWebhook(payload: AsaasWebhookPayload): Promise<Webh
   if (alreadyProcessed) return { status: "duplicate" };
 
   const effect = mapAsaasEvent(payload);
+  // Cobrança avulsa (fundador) que venceu sem pagamento não dá nem tira
+  // acesso: quem está no teste grátis continua no teste.
+  if (payload.event === "PAYMENT_OVERDUE" && payload.payment && !payload.payment.subscription) {
+    await repository.markEvent(payload.id, { userId: null, error: null });
+    return { status: "ignored", reason: "cobrança avulsa vencida" };
+  }
   if (effect.kind === "ignore") {
     await repository.markEvent(payload.id, { userId: null, error: null });
     return { status: "ignored", reason: effect.reason };

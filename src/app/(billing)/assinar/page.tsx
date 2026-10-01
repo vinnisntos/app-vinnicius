@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { getAccessStatus } from "@/lib/access/status";
 import { signOut } from "@/lib/auth/actions";
 import { requireUserId } from "@/lib/auth/session";
-import { getAppSettings } from "@/lib/modules/conta/repository";
+import { listPlans } from "@/lib/modules/billing/service";
 
 export const metadata: Metadata = { title: "Assinatura" };
 
@@ -21,7 +21,7 @@ function trialLabel(end: string | null, serverNow: string) {
 
 export default async function SubscribePage() {
   const userId = await requireUserId();
-  const [access, settings] = await Promise.all([getAccessStatus(userId), getAppSettings()]);
+  const [access, catalog] = await Promise.all([getAccessStatus(userId), listPlans()]);
   const active = access.access_state === "active" || access.access_state === "master";
   const trial = access.access_state === "trial";
   const revoked = access.access_state === "revoked";
@@ -41,16 +41,16 @@ export default async function SubscribePage() {
             </>
           ) : (
             <>
-              <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${trial ? "text-warning" : "text-danger"}`}>{revoked ? "Acesso suspenso" : trial ? `Faltam ${trialLabel(access.trial_ends_at, access.server_now)}` : `Seu teste de ${settings?.trialDays ?? 3} dias terminou`}</p>
+              <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${trial ? "text-warning" : "text-danger"}`}>{revoked ? "Acesso suspenso" : trial ? `Faltam ${trialLabel(access.trial_ends_at, access.server_now)}` : `Seu teste de ${catalog.trial_days} dias terminou`}</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight">{revoked ? "Seu acesso foi suspenso pela administração" : "Sua evolução não precisa parar aqui."}</h1>
               <p className="mt-3 text-sm leading-relaxed text-text-secondary">{revoked ? "Fale com o suporte para entender o motivo e regularizar sua conta." : trial ? "Garanta seu acesso antes do fim do período gratuito." : "Assine para retomar seus registros e acompanhar sua evolução sem perder o ritmo."}</p>
               <ul className="my-7 space-y-3 text-sm text-foreground">
-                {["Alimentação, hidratação e metas personalizadas", "Acompanhamento de medicação e progresso", "Treinos prontos para diferentes objetivos", "Comunidade para compartilhar conquistas", "Lembretes no Google Agenda"].map((benefit) => <li key={benefit} className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success-soft text-success"><Check className="size-4" aria-hidden /></span>{benefit}</li>)}
+                {["Registro das aplicações da medicação prescrita", "Meta de proteína, água e alimentação", "Peso e medidas organizados para a consulta", "Treinos de força para não perder músculo", "Comunidade para trocar experiências"].map((benefit) => <li key={benefit} className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success-soft text-success"><Check className="size-4" aria-hidden /></span>{benefit}</li>)}
               </ul>
             </>
           )}
         </section>
-        {!active ? <CheckoutButton revoked={revoked} /> : null}
+        {!active ? <CheckoutButton revoked={revoked} plans={catalog.plans} /> : null}
       </div>
     </main>
   );

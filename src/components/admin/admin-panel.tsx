@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { FaqAdmin } from "@/components/admin/faq-admin";
 import { TipsAdmin } from "@/components/admin/tips-admin";
+import { FunnelPanel } from "@/components/admin/funnel-panel";
 import { ApiClientError, apiData } from "@/lib/api/client";
 import { ACCESS_STATES, type AccessState, type AdminSubscriptionAction, type AdminSubscriptionItem, type AppSettingsRow, type SubscriptionRow } from "@/types/database";
 
@@ -51,6 +52,8 @@ export function AdminPanel() {
   return <div className="space-y-6">
     <header><p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-strong">Área restrita</p><h1 className="mt-1 text-3xl font-black tracking-tight">Painel master</h1><p className="mt-2 text-sm text-text-tertiary">Assinaturas, testes e configurações comerciais.</p></header>
     <div className="grid grid-cols-2 gap-3 md:grid-cols-5">{ACCESS_STATES.map((key) => <button key={key} type="button" onClick={() => { setState(state === key ? "" : key); setPage(1); }} className={`min-h-24 rounded-2xl border p-4 text-left backdrop-blur-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${state === key ? "border-brand-400/40 bg-brand-soft" : "border-glass-border bg-glass"}`}><span className="block text-2xl font-black">{overview?.[key] ?? 0}</span><span className="text-xs text-text-tertiary">{LABELS[key]}</span></button>)}</div>
+
+    <FunnelPanel />
 
     <section className="rounded-2xl border border-glass-border bg-glass p-4 shadow-xl backdrop-blur-md">
       <div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-tertiary" aria-hidden /><Input value={query} onChange={(e) => setQuery(e.target.value)} className="h-12 pl-10" placeholder="Buscar por nome, e-mail ou telefone" aria-label="Buscar assinaturas" /></div>

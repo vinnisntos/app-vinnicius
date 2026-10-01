@@ -121,6 +121,7 @@ const PROTEIN_G_PER_KG: Record<NutritionGoal, number> = {
   manter: 1.6,
   ganhar: 1.8,
 };
+const MEDICATION_PROTEIN_G_PER_KG = 1.8;
 const FAT_SHARE = 0.25; // 25% das calorias
 
 export type MacroTargets = { protein_g: number; carbs_g: number; fat_g: number };
@@ -134,8 +135,11 @@ export function calculateMacroTargets(input: {
   kcal: number;
   weightKg: number;
   goal: NutritionGoal;
+  /** Quem usa medicação: 1,8 g/kg sempre (preservar massa magra). */
+  usesMedication?: boolean;
 }): MacroTargets {
-  const protein = Math.round(input.weightKg * PROTEIN_G_PER_KG[input.goal]);
+  const perKg = input.usesMedication ? MEDICATION_PROTEIN_G_PER_KG : PROTEIN_G_PER_KG[input.goal];
+  const protein = Math.round(input.weightKg * perKg);
   const fat = Math.round((input.kcal * FAT_SHARE) / 9);
   const carbs = Math.max(0, Math.round((input.kcal - protein * 4 - fat * 9) / 4));
   return { protein_g: protein, carbs_g: carbs, fat_g: fat };

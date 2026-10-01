@@ -127,6 +127,11 @@ export const asaas = {
     return request<AsaasPayment>("POST", "/payments", input);
   },
 
+  /** Remove uma cobrança ainda não paga (troca de plano antes de pagar). */
+  deletePayment(paymentId: string) {
+    return request<{ deleted: boolean }>("DELETE", `/payments/${encodeURIComponent(paymentId)}`);
+  },
+
   getPayment(paymentId: string) {
     return request<AsaasPayment>("GET", `/payments/${encodeURIComponent(paymentId)}`);
   },

@@ -25,7 +25,7 @@ export type NavItem = {
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Início", icon: LayoutDashboard, mobile: "tab" },
   { href: "/alimentacao", label: "Alimentação", icon: Apple, mobile: "tab" },
-  { href: "/treinos", label: "Treinos", icon: Dumbbell, mobile: "tab" },
+  { href: "/treinos", label: "Força", icon: Dumbbell, mobile: "tab" },
   { href: "/saude", label: "Saúde", icon: HeartPulse, mobile: "tab" },
   { href: "/comunidade", label: "Comunidade", icon: Users, mobile: "tab" },
   { href: "/lembretes", label: "Lembretes", icon: BellRing, mobile: "menu" },

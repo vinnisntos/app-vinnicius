@@ -542,3 +542,16 @@ completa dos usuários de teste).
 Migrations: `0011` (cancelamento no fim do período, preferências) e `0012`
 (FAQ de autoatendimento). Aceite: 125 checagens de zona do polegar nos dois
 temas (h2/h3/h4) e 17 asserções E2E de autoatendimento no Supabase real.
+
+## Fase 14 — Roadmap de produto, Fase 0 ("Reposicionar e cobrar")
+
+Fonte: `docs/Roadmap de produto.pdf`. Só a Fase 0 foi implementada; as Fases 1 a 4 esperam os portões do roadmap.
+
+- **Posicionamento:** landing para quem começou a caneta com prescrição médica (sem marca de medicamento, sem depoimentos até haver reais), telas ilustrativas em `components/site/app-previews.tsx`. Fora da vitrine: Google Agenda, dicas e mentoria, ganho de massa. Treinos viraram "Força para não perder músculo".
+- **Cadastro:** pergunta obrigatória de uso de medicação (`profiles.medication_status`), consentimento específico de dados de saúde (`health_consent_at`/`health_consent_version`) e origem do cadastro (`signup_utm`, campos ocultos preenchidos por `components/site/utm-capture.tsx`).
+- **Metas:** quem usa medicação (resposta do cadastro ou medicação ativa) recebe proteína de 1,8 g/kg em destaque (`NutritionMetrics.focus = "proteina"`) e o aviso "Hoje você comeu pouco" abaixo do mínimo diário (`getIntakeGuidance`). Demais usuários: nada muda.
+- **Planos** (`lib/modules/billing/plans.ts`, fonte única): mensal R$ 19,90, anual R$ 149, fundador R$ 67 (Pix à vista, 12 meses, não renova, `app_settings.founder_seats_total` vagas). `externalReference` no Asaas = `<userId>|<plano>`. Teste grátis de 7 dias.
+- **Medição:** tabela `analytics_events` (interna, sem dado de saúde) + `GET /api/admin/funnel` e painel "Funil" no admin. Motivo de cancelamento em `subscriptions.cancel_reason`.
+- **LGPD:** `GET /api/me/export` (Minha conta → Baixar meus dados), seção "Dados de saúde" na política de privacidade.
+- **Migrations:** `0013_fase0_reposicionamento.sql`, `0014_fase0_faq.sql` (aplicadas em produção em 2026-10-01).
+- **Regra permanente:** o app registra, nunca recomenda tratamento. "Siga sempre a orientação do seu médico."

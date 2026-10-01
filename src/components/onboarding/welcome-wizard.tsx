@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarCheck, Check, Dumbbell, HeartPulse, LoaderCircle, Smartphone, Sparkles, UserRound } from "lucide-react";
+import { Check, Dumbbell, HeartPulse, LoaderCircle, Smartphone, Sparkles, UserRound } from "lucide-react";
 import { MedicationFormSheet } from "@/components/saude/medication-form-sheet";
 import { BottomActionBar, BOTTOM_ACTION_BAR_SPACER } from "@/components/ui/bottom-action-bar";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,6 @@ import {
   ACTIVITY_LEVELS,
   MEDICATION_DISCLAIMER,
   type ActivityLevel,
-  type GoogleCalendarStatus,
   type NutritionGoal,
   type Sex,
   type WorkoutProgramRow,
@@ -26,7 +25,7 @@ import {
  * Concluir ou pular marca `onboarding_completed` no perfil.
  */
 
-const STEPS = ["objetivo", "voce", "medicacao", "treino", "lembretes", "instalar"] as const;
+const STEPS = ["objetivo", "voce", "medicacao", "treino", "instalar"] as const;
 type Step = (typeof STEPS)[number];
 
 const GOALS: { value: NutritionGoal; title: string; text: string }[] = [
@@ -99,12 +98,15 @@ export function WelcomeWizard({ userId, firstName }: { userId: string; firstName
   const [activity, setActivity] = useState<ActivityLevel>("leve");
 
   const [usesMedication, setUsesMedication] = useState<boolean | null>(null);
+  // Mantém o perfil coerente com a resposta (define a meta em destaque).
+  const saveMedicationStatus = (medication_status: "usa" | "nao_usa") => {
+    void apiData("/api/me", { method: "PATCH", json: { medication_status } }).catch(() => undefined);
+  };
   const [medSheet, setMedSheet] = useState(false);
   const [medSaved, setMedSaved] = useState(false);
 
   const [programs, setPrograms] = useState<WorkoutProgramRow[]>([]);
   const [enrolled, setEnrolled] = useState<string | null>(null);
-  const [google, setGoogle] = useState<GoogleCalendarStatus | null>(null);
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
 
   const index = STEPS.indexOf(step);
@@ -136,10 +138,7 @@ export function WelcomeWizard({ userId, firstName }: { userId: string; firstName
     if (step === "treino" && programs.length === 0) {
       apiData<WorkoutProgramRow[]>("/api/training/programs").then(setPrograms).catch(() => setPrograms([]));
     }
-    if (step === "lembretes" && !google) {
-      apiData<GoogleCalendarStatus>("/api/integrations/google").then(setGoogle).catch(() => setGoogle(null));
-    }
-  }, [step, programs.length, google]);
+  }, [step, programs.length]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -281,8 +280,8 @@ export function WelcomeWizard({ userId, firstName }: { userId: string; firstName
         <>
           <StepHeader icon={<HeartPulse className="size-6" />} title="Você usa medicação para emagrecer?" text="Por exemplo, da classe GLP-1, prescrita pelo seu médico. O app ajuda a lembrar as aplicações e registrar como você se sente." />
           <div className="grid grid-cols-2 gap-2">
-            <Card selected={usesMedication === true} onClick={() => { setUsesMedication(true); setMedSheet(true); }} title="Sim" />
-            <Card selected={usesMedication === false} onClick={() => setUsesMedication(false)} title="Não" />
+            <Card selected={usesMedication === true} onClick={() => { setUsesMedication(true); saveMedicationStatus("usa"); setMedSheet(true); }} title="Sim" />
+            <Card selected={usesMedication === false} onClick={() => { setUsesMedication(false); saveMedicationStatus("nao_usa"); }} title="Não" />
           </div>
           {medSaved ? <p className="mt-4 rounded-xl bg-success-soft p-3 text-sm text-success">Medicação cadastrada. Você acompanha tudo na aba Saúde.</p> : null}
           <p className="mt-5 rounded-xl border border-glass-border bg-glass p-3 text-sm">{MEDICATION_DISCLAIMER}</p>
@@ -312,22 +311,6 @@ export function WelcomeWizard({ userId, firstName }: { userId: string; firstName
         </>
       ) : null}
 
-      {step === "lembretes" ? (
-        <>
-          <StepHeader icon={<CalendarCheck className="size-6" />} title="Lembretes no seu celular" text="Criamos eventos na sua Google Agenda (treino, água, refeições, aplicação) e o próprio Google te avisa — sem instalar nada." />
-          {google?.available ? (
-            google.connected ? (
-              <p className="rounded-xl bg-success-soft p-3 text-sm text-success">Google Agenda conectado ({google.google_email}).</p>
-            ) : (
-              <a href="/api/integrations/google/connect" className="flex h-12 w-full items-center justify-center rounded-xl border border-glass-border bg-glass font-semibold">
-                Conectar Google Agenda
-              </a>
-            )
-          ) : (
-            <p className="rounded-xl border border-glass-border bg-glass p-3 text-sm text-text-secondary">A integração com o Google Agenda estará disponível em breve. Você poderá ativá-la em Lembretes.</p>
-          )}
-        </>
-      ) : null}
 
       {step === "instalar" ? (
         <>
