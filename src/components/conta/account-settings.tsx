@@ -8,6 +8,7 @@ import { usePreferences } from "@/components/preferences/preferences-provider";
 import { ThemeSelector } from "@/components/theme/theme-selector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ApiClientError, apiData } from "@/lib/api/client";
@@ -263,7 +264,7 @@ export function AccountSettings() {
           ] as const).map(([key, label, autoComplete, errors]) => (
             <div key={key}>
               <Label htmlFor={`senha-${key}`}>{label}</Label>
-              <Input id={`senha-${key}`} type="password" className="mt-1.5 h-12" autoComplete={autoComplete} value={pw[key]} onChange={(e) => setPw((c) => ({ ...c, [key]: e.target.value }))} />
+              <PasswordInput id={`senha-${key}`} className="mt-1.5 h-12" autoComplete={autoComplete} value={pw[key]} onChange={(e) => setPw((c) => ({ ...c, [key]: e.target.value }))} />
               <FieldErrors errors={errors} />
             </div>
           ))}
@@ -351,7 +352,7 @@ export function AccountSettings() {
             </div>
             <div>
               <Label htmlFor="excluir-senha">Sua senha</Label>
-              <Input id="excluir-senha" type="password" className="mt-1.5 h-12" autoComplete="current-password" value={del.password} onChange={(e) => setDel((c) => ({ ...c, password: e.target.value }))} />
+              <PasswordInput id="excluir-senha" className="mt-1.5 h-12" autoComplete="current-password" value={del.password} onChange={(e) => setDel((c) => ({ ...c, password: e.target.value }))} />
               <FieldErrors errors={delState.fields?.password} />
             </div>
             {delState.error && !delState.fields ? <p role="alert" className="text-sm text-danger">{delState.error}</p> : null}
