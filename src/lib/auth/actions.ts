@@ -1,5 +1,7 @@
 "use server";
 
+import { track } from "@/lib/modules/analytics/track";
+import { HEALTH_CONSENT_VERSION } from "@/types/database";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -51,14 +53,20 @@ export async function signUp(_prev: AuthFormState, formData: FormData): Promise<
     };
   }
 
-  const { full_name, email, phone, password } = parsed.data;
+  const { full_name, email, phone, password, medication_status } = parsed.data;
+  const utm = Object.fromEntries(
+    (["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const)
+      .filter((key) => parsed.data[key])
+      .map((key) => [key, parsed.data[key]]),
+  );
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      // Lidos pelo trigger handle_new_user → profiles.full_name/phone.
-      data: { full_name, phone },
+      // Lidos pelo trigger handle_new_user (0013) → profiles: nome, celular,
+      // uso de medicação, consentimento de dados de saúde e origem.
+      data: { full_name, phone, medication_status, health_consent_version: HEALTH_CONSENT_VERSION, utm },
       emailRedirectTo: `${await appUrl()}/auth/confirm?next=/`,
     },
   });
@@ -74,6 +82,16 @@ export async function signUp(_prev: AuthFormState, formData: FormData): Promise<
     }
     console.error("[auth] signUp", error.code, error.message);
     return { error: "Não foi possível criar a conta. Tente novamente." };
+  }
+
+  // identities vazio = e-mail já cadastrado (resposta neutra do Supabase):
+  // não é um cadastro novo, não conta no funil.
+  if (data.user?.identities?.length) {
+    await track(data.user.id, "signup", {
+      utm_source: utm.utm_source,
+      utm_medium: utm.utm_medium,
+      utm_campaign: utm.utm_campaign,
+    });
   }
 
   return { success: "Enviamos um link de confirmação para o seu e-mail." };

@@ -60,7 +60,11 @@ export function getAsaasPlan() {
   };
 }
 
-/** Sem chave ou sem valor de plano → integração desligada (usa link fixo). */
+/**
+ * Integração ligada = há chave e a cobrança foi habilitada
+ * (ASAAS_PLAN_VALUE > 0 funciona como chave liga/desliga; os preços em si
+ * vêm do catálogo em lib/modules/billing/plans.ts).
+ */
 export function isAsaasConfigured(): boolean {
   const { value } = getAsaasPlan();
   return Boolean(process.env.ASAAS_API_KEY) && Number.isFinite(value) && value > 0;
@@ -104,11 +108,27 @@ export const asaas = {
     billingType: AsaasBillingType;
     value: number;
     nextDueDate: string;
-    cycle: "MONTHLY";
+    cycle: "MONTHLY" | "YEARLY";
     description: string;
     externalReference: string;
   }) {
     return request<AsaasSubscription>("POST", "/subscriptions", input);
+  },
+
+  /** Cobrança avulsa (plano fundador: pagamento único no Pix). */
+  createPayment(input: {
+    customer: string;
+    billingType: AsaasBillingType;
+    value: number;
+    dueDate: string;
+    description: string;
+    externalReference: string;
+  }) {
+    return request<AsaasPayment>("POST", "/payments", input);
+  },
+
+  getPayment(paymentId: string) {
+    return request<AsaasPayment>("GET", `/payments/${encodeURIComponent(paymentId)}`);
   },
 
   /** Remove a assinatura no Asaas (para as cobranças futuras). */

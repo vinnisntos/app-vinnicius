@@ -5,6 +5,7 @@ import {
   calculateMacroTargets,
   calculateRecommendedCalories,
   calculateTDEE,
+  getIntakeGuidance,
 } from "./calculations";
 
 describe("calculateBMR (Mifflin-St Jeor)", () => {
@@ -102,5 +103,36 @@ describe("calculateMacroTargets", () => {
 
   it("carboidrato nunca fica negativo", () => {
     expect(calculateMacroTargets({ kcal: 1200, weightKg: 150, goal: "emagrecer" }).carbs_g).toBe(0);
+  });
+});
+
+describe("getIntakeGuidance", () => {
+  const base = { usesMedication: true, sex: "F" as const, consumedKcal: 700, completedMeals: 2, isToday: true, nowTime: "19:30" };
+
+  it("quem usa medicação: foco em proteína", () => {
+    expect(getIntakeGuidance(base).focus).toBe("proteina");
+    expect(getIntakeGuidance({ ...base, usesMedication: false }).focus).toBe("calorias");
+  });
+
+  it("avisa 'comeu pouco' abaixo do mínimo, com o dia avançado", () => {
+    expect(getIntakeGuidance(base)).toMatchObject({ min_kcal: 1200, low_intake_warning: true });
+    expect(getIntakeGuidance({ ...base, sex: "M", consumedKcal: 1400 })).toMatchObject({ min_kcal: 1500, low_intake_warning: true });
+  });
+
+  it("não avisa cedo no dia, nem acima do mínimo", () => {
+    expect(getIntakeGuidance({ ...base, nowTime: "11:00" }).low_intake_warning).toBe(false);
+    expect(getIntakeGuidance({ ...base, consumedKcal: 1300 }).low_intake_warning).toBe(false);
+  });
+
+  it("dia sem nenhum registro não é 'comeu pouco'", () => {
+    expect(getIntakeGuidance({ ...base, consumedKcal: 0, completedMeals: 0 }).low_intake_warning).toBe(false);
+  });
+
+  it("dia passado vale em qualquer hora", () => {
+    expect(getIntakeGuidance({ ...base, isToday: false, nowTime: "08:00" }).low_intake_warning).toBe(true);
+  });
+
+  it("quem não usa medicação nunca recebe o aviso", () => {
+    expect(getIntakeGuidance({ ...base, usesMedication: false }).low_intake_warning).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { appSettings, faqItems, helpTooltips, posts, subscriptions } from "@/lib/db/schema";
-import type { AccessState, AdminSubscriptionItem, SubscriptionStatus, UserRole } from "@/types/database";
+import type { AccessState, AdminSubscriptionItem, BillingPlanId, CancelReason, SubscriptionStatus, UserRole } from "@/types/database";
 import type {
   FaqItemInput,
   HelpTooltipInput,
@@ -31,6 +31,9 @@ type AdminRow = {
   trial_ends_at: Date | null;
   current_period_end: Date | null;
   cancel_requested_at: Date | null;
+  plan: BillingPlanId | null;
+  auto_renew: boolean | null;
+  cancel_reason: CancelReason | null;
   asaas_customer_id: string | null;
   asaas_subscription_id: string | null;
   approved_by: string | null;
@@ -55,7 +58,7 @@ export async function listSubscriptions(
   const rows = await db.execute<AdminRow>(sql`
     select p.id, p.full_name, p.email, p.phone, p.role, p.created_at,
            a.access_state,
-           s.status, s.is_active_subscription, s.trial_ends_at, s.current_period_end, s.cancel_requested_at,
+           s.status, s.is_active_subscription, s.trial_ends_at, s.current_period_end, s.cancel_requested_at, s.plan, s.auto_renew, s.cancel_reason,
            s.asaas_customer_id, s.asaas_subscription_id, s.approved_by, s.approved_at,
            s.revoked_at, s.admin_notes,
            s.created_at as sub_created_at, s.updated_at as sub_updated_at,
@@ -88,6 +91,9 @@ export async function listSubscriptions(
           trial_ends_at: new Date(r.trial_ends_at!).toISOString(),
           current_period_end: isoOrNull(r.current_period_end),
           cancel_requested_at: isoOrNull(r.cancel_requested_at),
+          plan: r.plan,
+          auto_renew: r.auto_renew ?? true,
+          cancel_reason: r.cancel_reason,
           asaas_customer_id: r.asaas_customer_id,
           asaas_subscription_id: r.asaas_subscription_id,
           approved_by: r.approved_by,

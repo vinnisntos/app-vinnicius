@@ -29,6 +29,7 @@ export async function updateProfile(userId: string, input: UpdateProfileInput) {
       ...(input.sound_enabled !== undefined && { soundEnabled: input.sound_enabled }),
       ...(input.haptics_enabled !== undefined && { hapticsEnabled: input.haptics_enabled }),
       ...(input.onboarding_completed && { onboardingCompletedAt: new Date() }),
+      ...(input.medication_status !== undefined && { medicationStatus: input.medication_status }),
     })
     .where(eq(profiles.id, userId))
     .returning();

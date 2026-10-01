@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { authUsers } from "./auth";
 
 export const profiles = pgTable("profiles", {
@@ -13,6 +13,10 @@ export const profiles = pgTable("profiles", {
   email: text("email"), // cópia de auth.users.email, sincronizada por trigger
   phone: text("phone"), // só dígitos, catálogo
   onboardingCompletedAt: timestamp("onboarding_completed_at", { withTimezone: true }),
+  medicationStatus: text("medication_status"), // usa|nao_usa|vai_comecar
+  healthConsentAt: timestamp("health_consent_at", { withTimezone: true }),
+  healthConsentVersion: text("health_consent_version"),
+  signupUtm: jsonb("signup_utm"),
   soundEnabled: boolean("sound_enabled").notNull().default(true),
   hapticsEnabled: boolean("haptics_enabled").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })

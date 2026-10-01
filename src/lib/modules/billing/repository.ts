@@ -2,6 +2,8 @@ import { and, eq, isNull, lte, ne, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { asaasWebhookEvents, subscriptions } from "@/lib/db/schema";
 import type { SubscriptionEffect } from "@/lib/integrations/asaas/events";
+import type { BillingPlanId } from "@/types/database";
+import { parseExternalReference, PLANS } from "./plans";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -23,7 +25,12 @@ export async function lockSubscription(tx: Tx, userId: string) {
 export async function saveAsaasIds(
   tx: Tx,
   userId: string,
-  ids: { asaasCustomerId?: string; asaasSubscriptionId?: string },
+  ids: {
+    asaasCustomerId?: string;
+    asaasSubscriptionId?: string | null;
+    asaasPendingPaymentId?: string | null;
+    plan?: BillingPlanId;
+  },
 ) {
   await tx.update(subscriptions).set(ids).where(eq(subscriptions.userId, userId));
 }
@@ -62,8 +69,6 @@ export async function markEvent(id: string, result: { userId: string | null; err
     .where(eq(asaasWebhookEvents.id, id));
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 /**
  * Dono do evento, do identificador mais forte para o mais fraco:
  * assinatura Asaas → cliente Asaas → externalReference (= nosso userId,
@@ -75,12 +80,12 @@ export async function findUserId(ref: {
   asaasCustomerId?: string | null;
   externalReference?: string | null;
 }): Promise<string | null> {
+  // externalReference = "<userId>|<plano>" (ou só o userId, formato antigo).
+  const referenceUserId = parseExternalReference(ref.externalReference).userId;
   const conditions = [
     ref.asaasSubscriptionId ? eq(subscriptions.asaasSubscriptionId, ref.asaasSubscriptionId) : undefined,
     ref.asaasCustomerId ? eq(subscriptions.asaasCustomerId, ref.asaasCustomerId) : undefined,
-    ref.externalReference && UUID.test(ref.externalReference)
-      ? eq(subscriptions.userId, ref.externalReference)
-      : undefined,
+    referenceUserId ? eq(subscriptions.userId, referenceUserId) : undefined,
   ].filter((c) => c !== undefined);
   if (conditions.length === 0) return null;
 
@@ -107,6 +112,7 @@ export async function applyEffect(
   effect: Extract<SubscriptionEffect, { kind: "set_status" }>,
   eventSubscriptionId: string | null,
   eventCreatedAt: Date,
+  paidPlan: BillingPlanId | null = null,
 ): Promise<number> {
   const rows = await db
     .update(subscriptions)
@@ -115,7 +121,13 @@ export async function applyEffect(
       lastAsaasEventAt: eventCreatedAt,
       ...(effect.currentPeriodEnd && { currentPeriodEnd: new Date(effect.currentPeriodEnd) }),
       // Pagou de novo → desiste do cancelamento pedido antes.
-      ...(effect.status === "active" && { cancelRequestedAt: null }),
+      ...(effect.status === "active" && { cancelRequestedAt: null, cancelReason: null, cancelReasonNote: null }),
+      // Plano pago define se renova: fundador é pagamento único.
+      ...(effect.status === "active" && paidPlan && {
+        plan: paidPlan,
+        autoRenew: PLANS[paidPlan].recurring,
+        asaasPendingPaymentId: null,
+      }),
       ...(effect.status === "active" &&
         eventSubscriptionId && {
           asaasSubscriptionId: sql`coalesce(${subscriptions.asaasSubscriptionId}, ${eventSubscriptionId})`,
@@ -145,4 +157,23 @@ export async function applyEffect(
     )
     .returning({ userId: subscriptions.userId });
   return rows.length;
+}
+
+/** Plano gravado no checkout e status atual (antes de aplicar o evento). */
+export async function getStoredState(userId: string): Promise<{ plan: BillingPlanId | null; status: string | null }> {
+  const [row] = await db
+    .select({ plan: subscriptions.plan, status: subscriptions.status })
+    .from(subscriptions)
+    .where(eq(subscriptions.userId, userId))
+    .limit(1);
+  return { plan: (row?.plan as BillingPlanId | null) ?? null, status: row?.status ?? null };
+}
+
+/** Vagas de fundador já vendidas (pagamento confirmado). */
+export async function countFounders(): Promise<number> {
+  const [row] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(subscriptions)
+    .where(and(eq(subscriptions.plan, "fundador"), eq(subscriptions.autoRenew, false), eq(subscriptions.status, "active")));
+  return row?.n ?? 0;
 }

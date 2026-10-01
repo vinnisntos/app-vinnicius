@@ -1,5 +1,6 @@
 import { apiRoute } from "@/lib/api/handler";
 import { toMealLogRow } from "@/lib/api/mappers";
+import { track } from "@/lib/modules/analytics/track";
 import * as repository from "@/lib/modules/alimentacao/api-repository";
 import { mealUpsertBodySchema } from "@/lib/modules/alimentacao/api-schema";
 
@@ -10,5 +11,7 @@ import { mealUpsertBodySchema } from "@/lib/modules/alimentacao/api-schema";
  */
 export const PUT = apiRoute({ guard: "access" }, async ({ userId, body }) => {
   const items = await body(mealUpsertBodySchema);
-  return (await repository.upsertMeals(userId, items)).map(toMealLogRow);
+  const rows = (await repository.upsertMeals(userId, items)).map(toMealLogRow);
+  if (rows.some((row) => row.is_completed)) await track(userId, "meal_logged");
+  return rows;
 });

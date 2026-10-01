@@ -1,3 +1,5 @@
+import { track } from "@/lib/modules/analytics/track";
+import type { CancelReason } from "@/types/database";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getAccessStatus } from "@/lib/access/status";
@@ -59,7 +61,10 @@ async function cancelAtAsaas(asaasSubscriptionId: string | null) {
  * Cancela a assinatura: para as cobranças futuras e mantém o acesso até o
  * fim do período já pago (a regra de expiração está em get_access_status).
  */
-export async function cancelSubscription(userId: string): Promise<CancelSubscriptionResponse> {
+export async function cancelSubscription(
+  userId: string,
+  input: { reason?: CancelReason; note?: string } = {},
+): Promise<CancelSubscriptionResponse> {
   const access = await getAccessStatus(userId);
   if (access.access_state === "master") {
     throw new ApiHttpError(409, "conflict", "Conta de administrador não tem assinatura.");
@@ -82,9 +87,14 @@ export async function cancelSubscription(userId: string): Promise<CancelSubscrip
 
   const [row] = await db
     .update(subscriptions)
-    .set({ cancelRequestedAt: new Date() })
+    .set({
+      cancelRequestedAt: new Date(),
+      cancelReason: input.reason ?? null,
+      cancelReasonNote: input.note || null,
+    })
     .where(eq(subscriptions.userId, userId))
     .returning();
+  await track(userId, "subscription_canceled", { reason: input.reason });
   return {
     cancel_requested_at: row.cancelRequestedAt!.toISOString(),
     access_until: row.currentPeriodEnd?.toISOString() ?? null,

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MEDICATION_STATUSES } from "@/types/database";
 
 /** Celular: aceita máscara ("(11) 99999-8888"), persiste só dígitos. */
 export const phoneSchema = z
@@ -25,6 +26,7 @@ export const updateProfileSchema = z
     sound_enabled: z.boolean(),
     haptics_enabled: z.boolean(),
     onboarding_completed: z.literal(true),
+    medication_status: z.enum(MEDICATION_STATUSES),
   })
   .partial()
   .strict();

@@ -1,6 +1,9 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
+  integer,
+  jsonb,
   pgTable,
   smallint,
   text,
@@ -29,6 +32,11 @@ export const subscriptions = pgTable("subscriptions", {
   asaasSubscriptionId: text("asaas_subscription_id").unique(),
   lastAsaasEventAt: timestamp("last_asaas_event_at", { withTimezone: true }),
   cancelRequestedAt: timestamp("cancel_requested_at", { withTimezone: true }),
+  plan: text("plan"), // mensal|anual|fundador
+  autoRenew: boolean("auto_renew").notNull().default(true),
+  asaasPendingPaymentId: text("asaas_pending_payment_id"),
+  cancelReason: text("cancel_reason"),
+  cancelReasonNote: text("cancel_reason_note"),
   approvedBy: uuid("approved_by").references(() => authUsers.id, {
     onDelete: "set null",
   }),
@@ -50,6 +58,7 @@ export const appSettings = pgTable("app_settings", {
   supportWhatsapp: text("support_whatsapp"),
   supportWhatsappMessage: text("support_whatsapp_message"),
   asaasCheckoutUrl: text("asaas_checkout_url"),
+  founderSeatsTotal: integer("founder_seats_total").notNull().default(100),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
@@ -57,3 +66,17 @@ export const appSettings = pgTable("app_settings", {
 
 export type Subscription = typeof subscriptions.$inferSelect;
 export type AppSettings = typeof appSettings.$inferSelect;
+
+/**
+ * Eventos do funil (cadastro → ativação → pagamento). Internos e SEM dado de
+ * saúde: `properties` só leva origem (utm), plano e motivo de cancelamento.
+ */
+export const analyticsEvents = pgTable("analytics_events", {
+  id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+  userId: uuid("user_id").references(() => authUsers.id, { onDelete: "set null" }),
+  event: text("event").notNull(),
+  properties: jsonb("properties").notNull().default(sql`'{}'::jsonb`),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});

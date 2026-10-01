@@ -140,3 +140,32 @@ export function calculateMacroTargets(input: {
   const carbs = Math.max(0, Math.round((input.kcal - protein * 4 - fat * 9) / 4));
   return { protein_g: protein, carbs_g: carbs, fat_g: fat };
 }
+
+/**
+ * Meta em destaque e aviso de pouca ingestão (roadmap, Fase 0).
+ *
+ * Para quem usa medicação que reduz o apetite, o risco não é comer demais —
+ * é comer DE MENOS e perder músculo. Por isso:
+ * - o destaque passa a ser a PROTEÍNA (o déficit de calorias sai do foco);
+ * - abaixo do mínimo seguro aparece "hoje você comeu pouco".
+ * O aviso só vale com o dia já avançado (18h+) ou em dia passado, e só se
+ * houve algum registro — dia sem registro é "não registrou", não "não comeu".
+ * Isto é orientação de rotina alimentar, nunca de tratamento.
+ */
+export function getIntakeGuidance(input: {
+  usesMedication: boolean;
+  sex: Sex;
+  consumedKcal: number;
+  completedMeals: number;
+  isToday: boolean;
+  nowTime: string; // "HH:MM" no fuso do usuário
+}): { focus: "proteina" | "calorias"; min_kcal: number; low_intake_warning: boolean } {
+  const min = MIN_SAFE_KCAL[input.sex];
+  const dayIsMostlyOver = !input.isToday || input.nowTime >= "18:00";
+  return {
+    focus: input.usesMedication ? "proteina" : "calorias",
+    min_kcal: min,
+    low_intake_warning:
+      input.usesMedication && input.completedMeals > 0 && dayIsMostlyOver && input.consumedKcal < min,
+  };
+}

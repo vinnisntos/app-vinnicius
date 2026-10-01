@@ -41,6 +41,21 @@ export const ACCESS_STATES = [
 ] as const;
 export type AccessState = (typeof ACCESS_STATES)[number];
 
+/** Resposta a "Você usa medicação para emagrecer prescrita pelo seu médico?" */
+export const MEDICATION_STATUSES = ["usa", "nao_usa", "vai_comecar"] as const;
+export type MedicationStatus = (typeof MEDICATION_STATUSES)[number];
+
+export const BILLING_PLAN_IDS = ["mensal", "anual", "fundador"] as const;
+export type BillingPlanId = (typeof BILLING_PLAN_IDS)[number];
+
+export const CANCEL_REASONS = ["preco", "nao_uso", "faltou_recurso", "parei_tratamento", "problema_tecnico", "outro"] as const;
+export type CancelReason = (typeof CANCEL_REASONS)[number];
+
+/** Versão do texto de consentimento de dados de saúde aceito no cadastro. */
+export const HEALTH_CONSENT_VERSION = "2026-10";
+export const HEALTH_CONSENT_TEXT =
+  "Autorizo o tratamento dos meus dados de saúde (peso, medidas, alimentação, medicação e sintomas) para o funcionamento do app, conforme a Política de Privacidade. Posso exportar ou excluir meus dados quando quiser.";
+
 export const NUTRITION_GOALS = ["emagrecer", "manter", "ganhar"] as const;
 export type NutritionGoal = (typeof NUTRITION_GOALS)[number];
 
@@ -86,6 +101,9 @@ export interface ProfileRow {
   role: UserRole; // só master altera
   email: string | null; // sincronizado do Auth, não editável pelo usuário
   phone: string | null; // só dígitos, 10–13
+  medication_status: MedicationStatus | null;
+  /** Consentimento específico para dados de saúde (LGPD). */
+  health_consent_at: IsoTimestamp | null;
   /** null = ainda não passou pelo assistente de boas-vindas. */
   onboarding_completed_at: IsoTimestamp | null;
   sound_enabled: boolean;
@@ -96,7 +114,7 @@ export interface ProfileRow {
 
 /** Campos que o próprio usuário pode editar no perfil. */
 export type ProfileUpdate = Partial<
-  Pick<ProfileRow, "full_name" | "avatar_url" | "timezone" | "phone" | "sound_enabled" | "haptics_enabled">
+  Pick<ProfileRow, "full_name" | "avatar_url" | "timezone" | "phone" | "sound_enabled" | "haptics_enabled" | "medication_status">
 > & {
   /** true marca o assistente de boas-vindas como concluído (ou pulado). */
   onboarding_completed?: boolean;
@@ -131,6 +149,10 @@ export interface SubscriptionRow {
   is_active_subscription: boolean; // gerada: status = 'active'
   trial_ends_at: IsoTimestamp;
   current_period_end: IsoTimestamp | null;
+  plan: BillingPlanId | null;
+  /** false = pagamento único (fundador): expira no fim do período. */
+  auto_renew: boolean;
+  cancel_reason: CancelReason | null;
   /** Cancelamento pedido pelo usuário: acesso vale até current_period_end. */
   cancel_requested_at: IsoTimestamp | null;
   asaas_customer_id: string | null;
@@ -245,6 +267,15 @@ export interface NutritionMetrics {
   recommended_kcal: number; // TDEE ajustado por `goal`
   consumed_kcal: number;
   remaining_kcal: number;
+  /**
+   * Meta em destaque: "proteina" para quem usa medicação (o déficit de
+   * calorias deixa de ser o número principal), "calorias" para os demais.
+   */
+  focus: "proteina" | "calorias";
+  /** Mínimo diário seguro de calorias (1200 F / 1500 M). */
+  min_kcal: number;
+  /** true = "hoje você comeu pouco" (abaixo do mínimo, só para quem usa medicação). */
+  low_intake_warning: boolean;
   /** Metas de macros derivadas da meta calórica (proteína por kg de peso). */
   protein_target_g: number;
   carbs_target_g: number;
@@ -456,6 +487,53 @@ export type AdminSubscriptionAction =
  */
 export interface CheckoutRequest {
   cpf?: string;
+  /** Padrão: "mensal". */
+  plan?: BillingPlanId;
+}
+
+/** Plano como exibido na vitrine e na tela de assinatura. */
+export interface BillingPlan {
+  id: BillingPlanId;
+  name: string;
+  price: number;
+  months: number;
+  /** false = pagamento único, sem renovação. */
+  recurring: boolean;
+  pix_only: boolean;
+  monthly_equivalent: number;
+  /** Vagas restantes (só no fundador); 0 = esgotado. */
+  seats_left: number | null;
+}
+
+/** GET /api/billing/plans — público. */
+export interface PlansResponse {
+  plans: BillingPlan[];
+  trial_days: number;
+}
+
+/** POST /api/billing/cancel — motivo opcional (medição de cancelamento). */
+export interface CancelSubscriptionRequest {
+  reason?: CancelReason;
+  note?: string;
+}
+
+/** GET /api/admin/funnel?days=30 — funil cadastro → ativação → pagamento. */
+export interface FunnelResponse {
+  days: number;
+  signups: number;
+  /** Cadastros que registraram ao menos 1 refeição ou aplicação. */
+  activated: number;
+  with_medication: number;
+  trials_running: number;
+  trials_ended: number;
+  subscribed: number;
+  canceled: number;
+  /** subscribed / (subscribed + trials_ended), em %. null sem base. */
+  trial_conversion_pct: number | null;
+  by_plan: Partial<Record<BillingPlanId, number>>;
+  by_source: { source: string; signups: number; subscribed: number }[];
+  cancel_reasons: Partial<Record<CancelReason, number>>;
+  founder: { total: number; sold: number; left: number };
 }
 
 /** POST /api/billing/checkout */
@@ -510,7 +588,7 @@ export type SideEffect = (typeof SIDE_EFFECTS)[number];
 
 /** Aviso obrigatório em toda tela de medicação. */
 export const MEDICATION_DISCLAIMER =
-  "Este app não substitui acompanhamento médico. Siga a prescrição do seu médico e nunca altere a dose por conta própria.";
+  "Siga sempre a orientação do seu médico. Este app não substitui acompanhamento médico e nunca sugere ou altera doses.";
 
 export interface MedicationRow {
   id: Uuid;

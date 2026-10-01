@@ -2,7 +2,9 @@ import { toMealLogRow, toNutritionProfileRow, toWaterLogRow, toWeightLogRow } fr
 import { toMealLogItemRow } from "@/lib/api/mappers-health";
 import { itemsForMeals } from "@/lib/modules/alimentos/repository";
 import { getTodayIsoDate } from "@/lib/date";
-import { getUserTimezone } from "@/lib/modules/conta/repository";
+import { nowInTimezone } from "@/lib/integrations/google/recurrence";
+import { getProfile as getAccountProfile, getUserTimezone } from "@/lib/modules/conta/repository";
+import { listMedications } from "@/lib/modules/medicacao/repository";
 import { MEAL_SLOTS, type NutritionDay, type NutritionMetrics } from "@/types/database";
 import * as repository from "./api-repository";
 import {
@@ -10,6 +12,7 @@ import {
   calculateMacroTargets,
   calculateRecommendedCalories,
   calculateTDEE,
+  getIntakeGuidance,
   type ActivityLevel,
   type NutritionGoal,
   type Sex,
@@ -26,12 +29,17 @@ export async function resolveDate(userId: string, date: string | undefined) {
  * existem com perfil + ao menos uma pesagem.
  */
 export async function getNutritionDay(userId: string, date: string): Promise<NutritionDay> {
-  const [profile, latestWeight, meals, water] = await Promise.all([
+  const [profile, latestWeight, meals, water, account, medications] = await Promise.all([
     repository.getProfile(userId),
     repository.getLatestWeight(userId),
     repository.getMealsForDay(userId, date),
     repository.getWaterLogsForDay(userId, date),
+    getAccountProfile(userId),
+    listMedications(userId),
   ]);
+  // "Usa medicação" = marcou no cadastro OU tem medicação ativa cadastrada.
+  const usesMedication = account?.medicationStatus === "usa" || medications.some((m) => m.isActive);
+  const now = nowInTimezone(account?.timezone ?? "America/Sao_Paulo");
 
   const mealRows = meals.map(toMealLogRow);
   const itemRows = (await itemsForMeals(userId, mealRows.map((m) => m.id))).map(toMealLogItemRow);
@@ -69,6 +77,14 @@ export async function getNutritionDay(userId: string, date: string): Promise<Nut
       consumed_kcal: Math.round(consumed),
       // Negativo = passou da meta (o front mostra como excedente).
       remaining_kcal: Math.round(recommended - consumed),
+      ...getIntakeGuidance({
+        usesMedication,
+        sex,
+        consumedKcal: consumed,
+        completedMeals: completed.length,
+        isToday: date === now.date,
+        nowTime: now.time,
+      }),
       protein_target_g: macros.protein_g,
       carbs_target_g: macros.carbs_g,
       fat_target_g: macros.fat_g,

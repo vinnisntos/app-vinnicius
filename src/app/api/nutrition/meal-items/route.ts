@@ -1,5 +1,6 @@
 import { apiRoute, ApiHttpError } from "@/lib/api/handler";
 import { toMealLogRow } from "@/lib/api/mappers";
+import { track } from "@/lib/modules/analytics/track";
 import { toMealLogItemRow } from "@/lib/api/mappers-health";
 import * as repository from "@/lib/modules/alimentos/repository";
 import { mealItemAddSchema } from "@/lib/modules/alimentos/schema";
@@ -12,5 +13,6 @@ import { mealItemAddSchema } from "@/lib/modules/alimentos/schema";
 export const POST = apiRoute({ guard: "access" }, async ({ userId, body }) => {
   const result = await repository.addMealItem(userId, await body(mealItemAddSchema));
   if (!result) throw new ApiHttpError(422, "validation", "Alimento não encontrado.", { food_id: ["Alimento não encontrado."] });
+  await track(userId, "meal_logged");
   return { meal: toMealLogRow(result.meal), items: result.items.map(toMealLogItemRow) };
 });

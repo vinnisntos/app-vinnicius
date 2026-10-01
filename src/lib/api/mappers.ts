@@ -12,6 +12,9 @@ import type {
 } from "@/lib/db/schema";
 import type {
   ActivityLevel,
+  BillingPlanId,
+  CancelReason,
+  MedicationStatus,
   CalendarReminderRow,
   FaqItemRow,
   MealLogRow,
@@ -50,6 +53,8 @@ export const toProfileRow = (p: Profile): ProfileRow => ({
   role: p.role as UserRole,
   email: p.email,
   phone: p.phone,
+  medication_status: p.medicationStatus as MedicationStatus | null,
+  health_consent_at: isoOrNull(p.healthConsentAt),
   onboarding_completed_at: isoOrNull(p.onboardingCompletedAt),
   sound_enabled: p.soundEnabled,
   haptics_enabled: p.hapticsEnabled,
@@ -63,6 +68,9 @@ export const toSubscriptionRow = (s: Subscription): SubscriptionRow => ({
   is_active_subscription: s.isActiveSubscription ?? s.status === "active",
   trial_ends_at: iso(s.trialEndsAt),
   current_period_end: isoOrNull(s.currentPeriodEnd),
+  plan: s.plan as BillingPlanId | null,
+  auto_renew: s.autoRenew,
+  cancel_reason: s.cancelReason as CancelReason | null,
   cancel_requested_at: isoOrNull(s.cancelRequestedAt),
   asaas_customer_id: s.asaasCustomerId,
   asaas_subscription_id: s.asaasSubscriptionId,
